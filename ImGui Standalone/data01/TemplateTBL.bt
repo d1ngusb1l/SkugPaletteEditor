@@ -1,0 +1,30 @@
+//------------------------------------------------
+//--- 010 Editor v15.0 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: *.tbl
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+
+int Base_Adress_For_Delete <comment="Base Address to delete, so that palettes work (offset for old version of SG)", format=hex>;
+int Base_Adress <comment="Base Address for many things (Base Offset)", format=hex,fgcolor=cWhite, bgcolor=0x0000FF>;
+int Offset_GameStatus <comment="Offset to Game Status (If =4, then we in the game)", format=hex>;
+int Offset_Character <comment="Offset to Charecters (This, for first char. If wanna next then +4)", format=hex,fgcolor=cBlack, bgcolor=0x00FFFF>;
+int Offset_Name <comment="Offset to Charecters Name", format=hex>;
+int Offset_PaletteData <comment="Offset to PaletteData", format=hex, fgcolor=cBlack, bgcolor=0x00FFFF>;
+int Offset_CurrentPalette <comment="Offset to CurrentPalette", format=hex>;
+int Offset_PaletteTotalOffset <comment="Offset to PaletteTotal", format=hex>;
+int Offset_NumberOfColor <comment="Offset to NumberOfColor", format=hex>;
+int Offset_ColorCodeOffset <comment="Offset to ColorCode", format=hex>;
+int Offset_HueShiftOffset <comment="Offset to HueShift", format=hex>;
+int NEW_Base_Adress_DonotdisplayCHAR <comment="Replace with NOP(0x90) 2 Bytes, if don't wanna display charecters", format=hex>;
+int NEW_Base_Adress_DonotdisplaySHADOWS <comment="Replace with |0xEB 0x1B| 2 Bytes, if don't wanna display shadows", format=hex>;
+int NEW_Base_Adress_Display_SuperShadowforever <comment="Replace with NOP (0x90) !!6!! Bytes, if wanna display SuperShadows", format=hex>;
+int NEW_Offset_LineColor <comment="Offset to LineColor", format=hex>;
+int NEW_Offset_SuperShadow <comment="Offset to SuperShadow", format=hex>;
