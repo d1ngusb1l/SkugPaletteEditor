@@ -58,6 +58,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Include</AdditionalIncludeDirectories>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -75,6 +76,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)Include</AdditionalIncludeDirectories>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -85,6 +87,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Data\GroupJSONFile.cpp" />
     <ClCompile Include="Data\PalleteFiles.cpp" />
     <ClCompile Include="Data\TableReader.cpp" />
     <ClCompile Include="Drawing.cpp" />
@@ -103,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Character.h" />
+    <ClInclude Include="Data\GroupJSONFiles.h" />
     <ClInclude Include="Data\PalleteFiles.h" />
     <ClInclude Include="Data\TableReader.h" />
     <ClInclude Include="Drawing.h" />
@@ -115,6 +119,7 @@
     <ClInclude Include="Include\ImGui\imstb_rectpack.h" />
     <ClInclude Include="Include\ImGui\imstb_textedit.h" />
     <ClInclude Include="Include\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Include\json.hpp" />
     <ClInclude Include="Include\tinyfiledialogs.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="PalleteEditor.h" />

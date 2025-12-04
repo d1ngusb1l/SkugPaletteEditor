@@ -65,6 +65,9 @@
     <ClCompile Include="Data\PalleteFiles.cpp">
       <Filter>Data</Filter>
     </ClCompile>
+    <ClCompile Include="Data\GroupJSONFile.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UI.h">
@@ -123,6 +126,12 @@
     </ClInclude>
     <ClInclude Include="Data\PalleteFiles.h">
       <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Data\GroupJSONFiles.h">
+      <Filter>Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\json.hpp">
+      <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

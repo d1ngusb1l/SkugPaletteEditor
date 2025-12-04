@@ -35,6 +35,11 @@ void Drawing::Draw()
 					{
 						AddressTable::LoadFromFile();
 					}
+					ImGui::Separator();
+					if (ImGui::MenuItem("Load JSON (Characters parts)"))
+					{
+						GroupColorGroup::LoadFromFile();
+					}
 					if (PalEdit::bGameOpenned and PalEdit::bMatchStarted and (PalEdit::current_character_idx != -1)) {
 						ImGui::Separator();
 						if (ImGui::MenuItem("Save Pallete"))
@@ -130,7 +135,7 @@ void Drawing::Draw()
 							int displayValue = currentChar.Current_Pallete_Num + 1;
 							if (ImGui::SliderInt("PalleteNum##", &displayValue, 1, currentChar.Max_Pallete_Num)) { //Слайдер выбора палетки
 								{
-									
+
 									currentChar.Current_Pallete_Num = displayValue - 1;
 									PalEdit::ChangePallete();
 									PalEdit::Read_Character();
@@ -139,42 +144,99 @@ void Drawing::Draw()
 
 							ImGui::Text("Color Palettes: %d", currentChar.Num_Of_Color);
 							ImGui::Separator();
-							for (int i = 1; i < currentChar.Character_Colors.size(); i++) {
-								// Получаем ссылку на 32-битный цвет
-								__int32& colorValue = currentChar.Character_Colors[i];
+							auto it = GroupColorGroup::characterGroups.find(currentChar.Char_Name);
+							if (it != GroupColorGroup::characterGroups.end() && !it->second.empty()) {
+								// Отображаем с группировкой
+								for (const auto& group : it->second) {
+									// Добавляем ImGuiTreeNodeFlags_DefaultOpen для открытого состояния по умолчанию
+									if (ImGui::CollapsingHeader(group.groupName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+										// Используем стиль без отступов для более плотного расположения
+										ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
 
-								// Распаковываем компоненты (формат ARGB)
-								float colorFloat[4] = {
-									((colorValue >> 16) & 0xFF) / 255.0f,  // Red
-									((colorValue >> 8) & 0xFF) / 255.0f,   // Green
-									(colorValue & 0xFF) / 255.0f,          // Blue
-									((colorValue >> 24) & 0xFF) / 255.0f   // Alpha
-								};
+										// Отображаем цвета в группе
+										for (int i = group.startIndex;
+											i < group.startIndex + group.count && i < currentChar.Character_Colors.size();
+											i++) {
 
-								ImGui::PushID(i);
-								// Отображаем ColorEdit
-								if (ImGui::ColorEdit4(("Color##" + std::to_string(i)).c_str(), colorFloat, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel)) {
+											__int32& colorValue = currentChar.Character_Colors[i];
 
-									// Упаковываем обратно в ARGB формат
-									colorValue =
-										(static_cast<__int32>(colorFloat[3] * 255) << 24) |  // Alpha
-										(static_cast<__int32>(colorFloat[0] * 255) << 16) |  // Red
-										(static_cast<__int32>(colorFloat[1] * 255) << 8) |   // Green
-										(static_cast<__int32>(colorFloat[2] * 255));         // Blue
+											float colorFloat[4] = {
+												((colorValue >> 16) & 0xFF) / 255.0f,
+												((colorValue >> 8) & 0xFF) / 255.0f,
+												(colorValue & 0xFF) / 255.0f,
+												((colorValue >> 24) & 0xFF) / 255.0f
+											};
 
-									PalEdit::ChangeColor(i, colorValue);
-									PalEdit::Read_Character();
-								}
+											ImGui::PushID(i);
+											if (ImGui::ColorEdit4(("##Color_" + std::to_string(i)).c_str(),
+												colorFloat,
+												ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview)) {
+												colorValue =
+													(static_cast<__int32>(colorFloat[3] * 255) << 24) |
+													(static_cast<__int32>(colorFloat[0] * 255) << 16) |
+													(static_cast<__int32>(colorFloat[1] * 255) << 8) |
+													(static_cast<__int32>(colorFloat[2] * 255));
 
-								ImGui::PopID();
+												PalEdit::ChangeColor(i, colorValue);
+												PalEdit::Read_Character();
+											}
 
-								if (i > 0 and i % 16 != 0) {
-									ImGui::SameLine();
+											if (ImGui::IsItemHovered()) {
+												ImGui::SetTooltip("Index: %d", i);
+											}
+
+											ImGui::PopID();
+
+											// Используем SameLine() с проверкой, помещается ли следующий элемент
+											bool isLastInGroup = (i == group.startIndex + group.count - 1);
+											bool isLastValidColor = (i == currentChar.Character_Colors.size() - 1);
+
+											if (!isLastInGroup && !isLastValidColor) {
+												ImGui::SameLine();
+											}
+										}
+
+										ImGui::PopStyleVar();
+									}
 								}
 							}
+							else {
+								for (int i = 1; i < currentChar.Character_Colors.size(); i++) {
+									// Получаем ссылку на 32-битный цвет
+									__int32& colorValue = currentChar.Character_Colors[i];
+
+									// Распаковываем компоненты (формат ARGB)
+									float colorFloat[4] = {
+										((colorValue >> 16) & 0xFF) / 255.0f,  // Red
+										((colorValue >> 8) & 0xFF) / 255.0f,   // Green
+										(colorValue & 0xFF) / 255.0f,          // Blue
+										((colorValue >> 24) & 0xFF) / 255.0f   // Alpha
+									};
+
+									ImGui::PushID(i);
+									// Отображаем ColorEdit
+									if (ImGui::ColorEdit4(("Color##" + std::to_string(i)).c_str(), colorFloat, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview)) {
+
+										// Упаковываем обратно в ARGB формат
+										colorValue =
+											(static_cast<__int32>(colorFloat[3] * 255) << 24) |  // Alpha
+											(static_cast<__int32>(colorFloat[0] * 255) << 16) |  // Red
+											(static_cast<__int32>(colorFloat[1] * 255) << 8) |   // Green
+											(static_cast<__int32>(colorFloat[2] * 255));         // Blue
+
+										PalEdit::ChangeColor(i, colorValue);
+										PalEdit::Read_Character();
+									}
+
+									ImGui::PopID();
+
+									if (i > 0 and i % 16 != 0) {
+										ImGui::SameLine();
+									}
+								}
+							}
+
 						}
-
-
 
 
 

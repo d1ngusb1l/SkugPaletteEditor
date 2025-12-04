@@ -199,6 +199,7 @@ void UI::Render()
         ImGui::NewFrame();
         {
             Drawing::Draw();
+            Sleep(10);
         }
         ImGui::EndFrame();
 
