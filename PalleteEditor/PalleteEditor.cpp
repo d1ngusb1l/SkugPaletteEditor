@@ -1,6 +1,7 @@
 #include "PalleteEditor.h"
 #include "Memory.h"
 #include "FileLoad.h"
+#include "Auto-Load-Pallete.h"
 
 #define GAME_STATUS_MATCH_STARTED 0x4
 
@@ -28,8 +29,12 @@ int PalEdit::FindVectorIndexByID(int id) {
 }
 
 void PalEdit::Init() {
-
+    Sleep(10);
     s_ProcessId = Memory::FindProcessId(L"Skullgirls.exe");
+    if (s_ProcessId == NULL){
+        bGameOpenned = false;
+        return;
+    }
     if (s_ProcessId != NULL) {
         s_BaseAddress = Memory::GetModuleBaseAddress(s_ProcessId, L"Skullgirls.exe");
         s_SG_Process = OpenProcess(PROCESS_ALL_ACCESS, TRUE, s_ProcessId);
@@ -37,9 +42,6 @@ void PalEdit::Init() {
         WriteProcessMemory(s_SG_Process, (LPVOID)(s_BaseAddress + 0x332EC0), PatchStuff::CodeCave.data(), PatchStuff::CodeCave.size(), nullptr);
         WriteProcessMemory(s_SG_Process, (LPVOID)(s_BaseAddress + 0x18672A), PatchStuff::JmpToCodeCave.data(), PatchStuff::JmpToCodeCave.size(), nullptr);
         bGameOpenned = true;
-    }
-    else {
-        bGameOpenned = false;
     }
     Memory::ReadProcessMemoryWithOffsets(
         s_SG_Process,
@@ -56,9 +58,15 @@ void PalEdit::Init() {
         return;
     }
     bMatchStarted = true;
+
     if (bGameOpenned and bMatchStarted and Character_Vector.size() != 0) {
         return;
     }
+
+    bNODisplayChar = false;
+    bNODisplayShadows = false;
+    bDisplaySuperShadows = false;
+
     Character_Vector.clear();
     for (int n{ 0 }; n < 6; n++) {
         std::string Name;
@@ -74,43 +82,119 @@ void PalEdit::Init() {
             Character Ch;
             Ch.Char_Name = Name;
             Ch.ID = n;
+            Memory::ReadProcessMemoryWithOffsets(
+                s_SG_Process,
+                s_BaseAddress, {
+                static_cast<uintptr_t>(AddressTable::Base_Adress()),
+                static_cast<uintptr_t>(AddressTable::Offset_Character() + n * 4),  // Приведение к нужному типу
+                static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+                static_cast<uintptr_t>(AddressTable::Offset_PaletteTotalOffset()),
+                },
+                &Ch.Max_Pallete_Num
+                );
+            Memory::ReadProcessMemoryWithOffsets(
+                s_SG_Process,
+                s_BaseAddress, {
+                static_cast<uintptr_t>(AddressTable::Base_Adress()),
+                static_cast<uintptr_t>(AddressTable::Offset_Character() + n * 4),  // Приведение к нужному типу
+                static_cast<uintptr_t>(AddressTable::Offset_CurrentPalette()),
+                },
+                &Ch.Current_Pallete_Num
+                );
+            Memory::ReadProcessMemoryWithOffsets(
+                s_SG_Process,
+                s_BaseAddress, {
+                static_cast<uintptr_t>(AddressTable::Base_Adress()),
+                static_cast<uintptr_t>(AddressTable::Offset_Character() + n * 4),  // Приведение к нужному типу
+                static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+                static_cast<uintptr_t>(AddressTable::Offset_NumberOfColor()),
+                },
+                &Ch.Num_Of_Color
+                );
+            Memory::ReadProcessMemoryWithOffsets(
+                s_SG_Process,
+                s_BaseAddress, {
+                static_cast<uintptr_t>(AddressTable::Base_Adress()),
+                static_cast<uintptr_t>(AddressTable::Offset_Character() + n * 4),  // Приведение к нужному типу
+                static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+                static_cast<uintptr_t>(AddressTable::NEW_Offset_LineColor()),
+                static_cast<uintptr_t>(4 * Ch.Current_Pallete_Num),
+                },
+                &Ch.LineColor
+                );
+            //SuperShadows1
+            Memory::ReadProcessMemoryWithOffsets(
+                s_SG_Process,
+                s_BaseAddress, {
+                static_cast<uintptr_t>(AddressTable::Base_Adress()),
+                static_cast<uintptr_t>(AddressTable::Offset_Character() + n * 4),  // Приведение к нужному типу
+                static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+                static_cast<uintptr_t>(AddressTable::NEW_Offset_SuperShadow()),
+                static_cast<uintptr_t>(4 * Ch.Current_Pallete_Num),
+                0
+                },
+                &Ch.SuperShadowColor1
+            );
+            Memory::ReadProcessMemoryWithOffsets(
+                s_SG_Process,
+                s_BaseAddress, {
+                static_cast<uintptr_t>(AddressTable::Base_Adress()),
+                static_cast<uintptr_t>(AddressTable::Offset_Character() + n * 4),  // Приведение к нужному типу
+                static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+                static_cast<uintptr_t>(AddressTable::NEW_Offset_SuperShadow()),
+                static_cast<uintptr_t>(4 * Ch.Current_Pallete_Num),
+                4
+                },
+                &Ch.SuperShadowColor2
+            );
             Character_Vector.push_back(Ch);
             std::cout << Name;
         }
     }
+
+    AutoPallete::init();
 }
 
 void PalEdit::Read_Character() {
     int VectorID = FindVectorIndexByID(current_character_idx);
+    //LineColor
     Memory::ReadProcessMemoryWithOffsets(
         s_SG_Process,
         s_BaseAddress, {
         static_cast<uintptr_t>(AddressTable::Base_Adress()),
         static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
         static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
-        static_cast<uintptr_t>(AddressTable::Offset_PaletteTotalOffset()),
+        static_cast<uintptr_t>(AddressTable::NEW_Offset_LineColor()),
+        static_cast<uintptr_t>(4 * Character_Vector[VectorID].Current_Pallete_Num),
         },
-        &Character_Vector[VectorID].Max_Pallete_Num
+        &Character_Vector[VectorID].LineColor
         );
-    Memory::ReadProcessMemoryWithOffsets(
-        s_SG_Process,
-        s_BaseAddress, {
-        static_cast<uintptr_t>(AddressTable::Base_Adress()),
-        static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
-        static_cast<uintptr_t>(AddressTable::Offset_CurrentPalette()),
-        },
-        &Character_Vector[VectorID].Current_Pallete_Num
-        );
+    //SuperShadows1
     Memory::ReadProcessMemoryWithOffsets(
         s_SG_Process,
         s_BaseAddress, {
         static_cast<uintptr_t>(AddressTable::Base_Adress()),
         static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
         static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
-        static_cast<uintptr_t>(AddressTable::Offset_NumberOfColor()),
+        static_cast<uintptr_t>(AddressTable::NEW_Offset_SuperShadow()),
+        static_cast<uintptr_t>(4 * Character_Vector[VectorID].Current_Pallete_Num),
+        0
         },
-        &Character_Vector[VectorID].Num_Of_Color
-        );
+        &Character_Vector[VectorID].SuperShadowColor1
+    );
+    Memory::ReadProcessMemoryWithOffsets(
+        s_SG_Process,
+        s_BaseAddress, {
+        static_cast<uintptr_t>(AddressTable::Base_Adress()),
+        static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
+        static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+        static_cast<uintptr_t>(AddressTable::NEW_Offset_SuperShadow()),
+        static_cast<uintptr_t>(4 * Character_Vector[VectorID].Current_Pallete_Num),
+        4
+        },
+        &Character_Vector[VectorID].SuperShadowColor2
+    );
+    //Colors
         Character_Vector[VectorID].Character_Colors.clear();
         for (int bar{ 0 }; bar < Character_Vector[VectorID].Num_Of_Color; bar++) {
             __int32 color;
@@ -128,6 +212,7 @@ void PalEdit::Read_Character() {
                 );
             Character_Vector[VectorID].Character_Colors.push_back(color);
         }
+
 }
 
 void PalEdit::ChangePallete() {
@@ -161,14 +246,136 @@ void PalEdit::ChangeColor(int Color_ID, __int32 colorValue) {
 }
 
 void PalEdit::ChangeAllColors() {
-    Character& currentChar = PalEdit::Character_Vector[PalEdit::FindVectorIndexByID(PalEdit::current_character_idx)];
-    for (int i = 1; i < currentChar.Character_Colors.size(); i++) {
-        ChangeColor(i, currentChar.Character_Colors[i-1]);
+    Character currentChar = PalEdit::Character_Vector[PalEdit::FindVectorIndexByID(PalEdit::current_character_idx)];
+    for (int i = 0; i < currentChar.Character_Colors.size(); i++) {
+        ChangeColor(i, currentChar.Character_Colors[i]);
     }
 }
 
+void PalEdit::NODisplayChar() {
+    static char MEM[] = {0x77, 0x23};
+    if (bNODisplayChar) {
+        
+        const char NOPE[] = { 0x90, 0x90 };
+        Memory::WriteProcessMemoryWithOffsets(
+            s_SG_Process,
+            s_BaseAddress, {
+            static_cast<uintptr_t>(AddressTable::NEW_Base_Adress_DonotdisplayCHAR())  // Приведение к нужному типу
+            },
+            NOPE);
 
+    }
+    else {
+        Memory::WriteProcessMemoryWithOffsets(
+            s_SG_Process,
+            s_BaseAddress, {
+            static_cast<uintptr_t>(AddressTable::NEW_Base_Adress_DonotdisplayCHAR())  // Приведение к нужному типу
+            },
+            MEM);
+    }
+}
 
+void PalEdit::NODisplayShadow() {
+    static char MEM[] = {0x75, 0x1E};
+    if (bNODisplayShadows) {
 
+        const char NOPE[] = { 0xEB, 0x1B };
+        Memory::WriteProcessMemoryWithOffsets(
+            s_SG_Process,
+            s_BaseAddress, {
+            static_cast<uintptr_t>(AddressTable::NEW_Base_Adress_DonotdisplaySHADOWS())  // Приведение к нужному типу
+            },
+            NOPE);
+
+    }
+    else {
+        Memory::WriteProcessMemoryWithOffsets(
+            s_SG_Process,
+            s_BaseAddress, {
+            static_cast<uintptr_t>(AddressTable::NEW_Base_Adress_DonotdisplaySHADOWS())  // Приведение к нужному типу
+            },
+            MEM);
+    }
+}
+
+void PalEdit::DisplaySuperShadow() {
+    static char MEM[6] = { 0x0F, 0x8B,0x22, 0x01, 0x00, 0x00 };
+    if (bDisplaySuperShadows) {
+
+        const char NOPE[] = { 0x90, 0x90,0x90,0x90,0x90,0x90, };
+        Memory::WriteProcessMemoryWithOffsets(
+            s_SG_Process,
+            s_BaseAddress, {
+            static_cast<uintptr_t>(AddressTable::NEW_Base_Adress_Display_SuperShadowforever())  // Приведение к нужному типу
+            },
+            NOPE);
+
+    }
+    else {
+        Memory::WriteProcessMemoryWithOffsets(
+            s_SG_Process,
+            s_BaseAddress, {
+            static_cast<uintptr_t>(AddressTable::NEW_Base_Adress_Display_SuperShadowforever())  // Приведение к нужному типу
+            },
+            MEM);
+    }
+}
+
+void PalEdit::ChangeLineColor() {
+    int VectorID = FindVectorIndexByID(current_character_idx);
+    Memory::WriteProcessMemoryWithOffsets(
+        s_SG_Process,
+        s_BaseAddress, {
+        static_cast<uintptr_t>(AddressTable::Base_Adress()),
+        static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
+        static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+        static_cast<uintptr_t>(AddressTable::NEW_Offset_LineColor()),
+        static_cast<uintptr_t>(4 * Character_Vector[VectorID].Current_Pallete_Num),
+        },
+        Character_Vector[VectorID].LineColor
+        );
+}
+void PalEdit::ChangeSuperShadow1() {
+    int VectorID = FindVectorIndexByID(current_character_idx);
+    Memory::WriteProcessMemoryWithOffsets(
+        s_SG_Process,
+        s_BaseAddress, {
+        static_cast<uintptr_t>(AddressTable::Base_Adress()),
+        static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
+        static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+        static_cast<uintptr_t>(AddressTable::NEW_Offset_SuperShadow()),
+        static_cast<uintptr_t>(4 * Character_Vector[VectorID].Current_Pallete_Num),
+        0
+        },
+        Character_Vector[VectorID].SuperShadowColor1
+    );
+}
+void PalEdit::ChangeSuperShadow2() {
+    int VectorID = FindVectorIndexByID(current_character_idx);
+    Memory::WriteProcessMemoryWithOffsets(
+        s_SG_Process,
+        s_BaseAddress, {
+        static_cast<uintptr_t>(AddressTable::Base_Adress()),
+        static_cast<uintptr_t>(AddressTable::Offset_Character() + current_character_idx * 4),  // Приведение к нужному типу
+        static_cast<uintptr_t>(AddressTable::Offset_PaletteData()),
+        static_cast<uintptr_t>(AddressTable::NEW_Offset_SuperShadow()),
+        static_cast<uintptr_t>(4 * Character_Vector[VectorID].Current_Pallete_Num),
+        4
+        },
+        Character_Vector[VectorID].SuperShadowColor2
+    );
+}
+
+void PalEdit::UpdateAllCharacters() {
+    for (Character currentChar : PalEdit::Character_Vector) {
+        current_character_idx = currentChar.ID;
+        PalEdit::ChangeAllColors();
+        PalEdit::ChangeLineColor();
+        PalEdit::ChangeSuperShadow1();
+        PalEdit::ChangeSuperShadow2();
+        PalEdit::Read_Character();
+    }
+    current_character_idx = -1;
+}
 
 

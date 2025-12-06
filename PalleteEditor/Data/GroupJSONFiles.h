@@ -1,6 +1,6 @@
 #pragma once
 #include <json.hpp> // Используйте библиотеку nlohmann/json
-using json = nlohmann::ordered_json;
+using ordered_json = nlohmann::ordered_json;
 
 // Структура для хранения группировки цветов
 struct ColorGroup {

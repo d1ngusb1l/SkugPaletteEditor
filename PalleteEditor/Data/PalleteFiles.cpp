@@ -6,7 +6,7 @@
 bool PalleteFile::LoadFromFile(Character& s_Char) {
     const char* filterPatterns[1] = { "*.pal" };
     const char* filePath = tinyfd_openFileDialog(
-        "Load Table",        // заголовок
+        "Load Pallete",        // заголовок
         "",                     // начальная директория
         1,                      // количество фильтров
         filterPatterns,         // фильтры
@@ -15,9 +15,9 @@ bool PalleteFile::LoadFromFile(Character& s_Char) {
     );
     if (filePath == NULL) {
         std::cout << "No file choosen" << std::endl;
-        return true;
+        return false;
     }
-    std::ifstream file(filePath);
+    std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Can't open file" << filePath << std::endl;
         return false;
@@ -39,39 +39,52 @@ bool PalleteFile::LoadFromFile(Character& s_Char) {
     uint8_t HueShift_int = 0;
     file.read(reinterpret_cast<char*>(&HueShift_inc), 1);
     file.read(reinterpret_cast<char*>(&HueShift_int), 1);
-    std::vector<__int32> temp(s_Char.Num_Of_Color);
-    if (s_Char.Num_Of_Color > 0) {
-        file.read(reinterpret_cast<char*>(temp.data()),
-            s_Char.Num_Of_Color * sizeof(__int32));
+    std::vector<__int32>  temp(1);
+    for (int i = 0; i < s_Char.Num_Of_Color-1; i++) {
+        __int32 color;
+        file.read(reinterpret_cast<char*>(&color), sizeof(color));
+        temp.push_back(color);
     }
+
     s_Char.Character_Colors = std::move(temp);
+    file.read(reinterpret_cast<char*>(&s_Char.LineColor), sizeof(s_Char.LineColor));
+    file.read(reinterpret_cast<char*>(&s_Char.SuperShadowColor1), sizeof(s_Char.SuperShadowColor1));
+    file.read(reinterpret_cast<char*>(&s_Char.SuperShadowColor2), sizeof(s_Char.SuperShadowColor2));
     return true;
 }
 
 bool PalleteFile::SaveToFile(const Character s_Char) {
 
     const char* filterPatterns[1] = { "*.pal" };
-    std::filesystem::path filePath = tinyfd_saveFileDialog(
+    char const* lTheSaveFileName = "";
+    lTheSaveFileName = tinyfd_saveFileDialog(
         "Save Pallete", // ""
         "*.pal", // ""
         1, // 0
         filterPatterns, // NULL | {"*.txt"}
         NULL);
+    if (lTheSaveFileName == NULL) {
+        return false;
+    }
+    std::filesystem::path filePath = lTheSaveFileName;
     if (filePath == "") {
         std::cout << "No file choosen" << std::endl;
-        return true;
+        return false;
     }
     if (filePath.extension().string().empty()) {
         filePath = filePath.string() + ".pal";
     }
-    std::ofstream file(filePath);
+    std::ofstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Can't open file" << filePath << std::endl;
         return false;
     }
 
     char charName[16] = { 0 };
-    strncpy_s(charName, s_Char.Char_Name.c_str(), 15);
+    size_t len = s_Char.Char_Name.length();
+    if (len > 15) len = 15;
+    memcpy(charName, s_Char.Char_Name.c_str(), len);
+    // charName уже инициализирован нулями, так что остальная часть будет 0
     file.write(charName, 16);
 
     uint32_t numOfColors = s_Char.Num_Of_Color;
@@ -85,6 +98,9 @@ bool PalleteFile::SaveToFile(const Character s_Char) {
         __int32 color = s_Char.Character_Colors[i];
         file.write(reinterpret_cast<const char*>(&color), sizeof(color));
     }
-
+    file.write(reinterpret_cast<const char*>(&s_Char.LineColor), sizeof(s_Char.LineColor));
+    file.write(reinterpret_cast<const char*>(&s_Char.SuperShadowColor1), sizeof(s_Char.SuperShadowColor1));
+    file.write(reinterpret_cast<const char*>(&s_Char.SuperShadowColor2), sizeof(s_Char.SuperShadowColor2));
     file.close();
+    return true;
 }

@@ -2,8 +2,9 @@
 #include <json.hpp> 
 #include "tinyfiledialogs.h"
 #include "pch.h"
+#include "config.h"
 
-using json = nlohmann::ordered_json;
+using ordered_json = nlohmann::ordered_json;
 
 bool GroupColorGroup::LoadFromFile() {
     const char* filterPatterns[1] = { "*.json" };
@@ -22,7 +23,9 @@ bool GroupColorGroup::LoadFromFile() {
     std::ifstream file(filePath);
     if (!file.is_open()) return false;
 
-    json j;
+    config::set_string("CharPart", filePath);
+
+    ordered_json j;
     file >> j;
 
     characterGroups.clear();
@@ -42,4 +45,5 @@ bool GroupColorGroup::LoadFromFile() {
 
         characterGroups[charName] = charGroups;
     }
+    return true;
 }

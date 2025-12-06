@@ -32,10 +32,28 @@
     <ClCompile Include="PalleteEditor.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Include\ImGui\imgui.cpp">
-      <Filter>Include\ImGui</Filter>
+    <ClCompile Include="Data\TableReader.cpp">
+      <Filter>Data</Filter>
     </ClCompile>
-    <ClCompile Include="Include\ImGui\imgui_demo.cpp">
+    <ClCompile Include="Include\tinyfiledialogs.c">
+      <Filter>Include</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\PalleteFiles.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Data\GroupJSONFile.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Auto-Load-Pallete.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ImGui\imgui.cpp">
       <Filter>Include\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Include\ImGui\imgui_draw.cpp">
@@ -53,21 +71,6 @@
     <ClCompile Include="Include\ImGui\imgui_widgets.cpp">
       <Filter>Include\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Data\TableReader.cpp">
-      <Filter>Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Include\tinyfiledialogs.c">
-      <Filter>Include</Filter>
-    </ClCompile>
-    <ClCompile Include="Memory.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="Data\PalleteFiles.cpp">
-      <Filter>Data</Filter>
-    </ClCompile>
-    <ClCompile Include="Data\GroupJSONFile.cpp">
-      <Filter>Data</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UI.h">
@@ -81,30 +84,6 @@
     </ClInclude>
     <ClInclude Include="PalleteEditor.h">
       <Filter>Source</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imconfig.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imgui.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imgui_impl_dx11.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imgui_impl_win32.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imgui_internal.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imstb_rectpack.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imstb_textedit.h">
-      <Filter>Include\ImGui</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ImGui\imstb_truetype.h">
-      <Filter>Include\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Data\TableReader.h">
       <Filter>Data</Filter>
@@ -133,5 +112,52 @@
     <ClInclude Include="Include\json.hpp">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="StyleImGui.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Auto-Load-Pallete.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imconfig.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imgui.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imgui_impl_dx11.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imgui_impl_win32.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imgui_internal.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imstb_rectpack.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imstb_textedit.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\imstb_truetype.h">
+      <Filter>Include\ImGui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TODO.md">
+      <Filter>Source</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SkullGirls Pallete Editor 2nd Encore.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
 </Project>

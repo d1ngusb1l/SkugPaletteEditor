@@ -9,5 +9,28 @@ class Character {
 	int ID;
 	int Num_Of_Color;
 	std::vector<__int32> Character_Colors;
+	__int32 LineColor;
+	__int32 SuperShadowColor1;
+	__int32 SuperShadowColor2;
 };
 
+inline static const char* characterNames[] = {
+	"Filia",
+	"Cerebella",
+	"Peacock",
+	"Parasoul",
+	"MsFortune",
+	"Painwheel",
+	"Valentine",
+	"Double",
+	"Squigly",
+	"BigBand",
+	"Eliza",
+	"Fukua",
+	"Beowulf",
+	"RoboFortune",
+	"Annie",
+	"Umbrella",
+	"BlackDahlia",
+	"Marie"
+};

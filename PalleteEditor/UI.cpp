@@ -1,5 +1,6 @@
 #include "UI.h"
 #include "Drawing.h"
+#include "StyleImGui.h"
 
 ID3D11Device* UI::pd3dDevice = nullptr;
 ID3D11DeviceContext* UI::pd3dDeviceContext = nullptr;
@@ -145,14 +146,14 @@ void UI::Render()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    ImGui::StyleColorsDark();
-
     ImGuiStyle& style = ImGui::GetStyle();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 4.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+
+    SetupImGuiStyle();
 
     const HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
     MONITORINFO info = {};

@@ -64,6 +64,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(DXSDK_DIR)Lib\x86\d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EmbedManagedResourceFile>SkullGirls Pallete Editor 2nd Encore.rc</EmbedManagedResourceFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -84,15 +85,17 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>$(DXSDK_DIR)Lib\x86\d3d11.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EmbedManagedResourceFile>SkullGirls Pallete Editor 2nd Encore.rc</EmbedManagedResourceFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Auto-Load-Pallete.cpp" />
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="Data\GroupJSONFile.cpp" />
     <ClCompile Include="Data\PalleteFiles.cpp" />
     <ClCompile Include="Data\TableReader.cpp" />
     <ClCompile Include="Drawing.cpp" />
     <ClCompile Include="Include\ImGui\imgui.cpp" />
-    <ClCompile Include="Include\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Include\ImGui\imgui_draw.cpp" />
     <ClCompile Include="Include\ImGui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Include\ImGui\imgui_impl_win32.cpp" />
@@ -105,7 +108,9 @@
     <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Auto-Load-Pallete.h" />
     <ClInclude Include="Character.h" />
+    <ClInclude Include="Config.h" />
     <ClInclude Include="Data\GroupJSONFiles.h" />
     <ClInclude Include="Data\PalleteFiles.h" />
     <ClInclude Include="Data\TableReader.h" />
@@ -124,8 +129,22 @@
     <ClInclude Include="Memory.h" />
     <ClInclude Include="PalleteEditor.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="StyleImGui.h" />
     <ClInclude Include="UI.h" />
     <ClInclude Include="Utills.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TODO.md">
+      <SubType>
+      </SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SkullGirls Pallete Editor 2nd Encore.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

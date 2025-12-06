@@ -2,7 +2,6 @@
 #include "TableReader.h"
 #include "tinyfiledialogs.h"
 
-
 bool AddressTable::LoadFromFile() {
     const char* filterPatterns[1] = { "*.tbl" };
     const char* filePath = tinyfd_openFileDialog(
@@ -13,6 +12,7 @@ bool AddressTable::LoadFromFile() {
         NULL,                   // описание фильтров
         0                       // множественный выбор (0 - нет, 1 - да)
     );
+    
     if (filePath == NULL) {
         std::cout << "No file choosen" << std::endl;
         return true;
