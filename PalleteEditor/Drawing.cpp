@@ -3,6 +3,7 @@
 #include "FileLoad.h"
 #include "Auto-Load-Pallete.h"
 #include "tinyfiledialogs.h"
+#include "ColorWheel.h"
 
 void Drawing::Active()
 {
@@ -18,6 +19,8 @@ void Drawing::Draw()
 {
 	if (isActive())
 	{
+		static std::unordered_map<std::string, bool> wheelOpenMap;
+
 		PalEdit::Init();
 		ImGui::SetNextWindowSize(vWindowSize, ImGuiCond_Once);
 		ImGui::SetNextWindowBgAlpha(1.0f);
@@ -299,9 +302,25 @@ void Drawing::Draw()
 												ImGui::SameLine();
 											}
 										}
+										ImGui::Separator();
+										std::string wheelKey = currentChar.Char_Name + std::string("|") + group.groupName;
+										std::string btn_id = std::string("wheelBtn_") + std::to_string(group.startIndex);
+										ImGui::PushID(btn_id.c_str());
+										if (ImGui::Button(("Open Wheel##" + btn_id).c_str())) {
+											wheelOpenMap[wheelKey] = !wheelOpenMap[wheelKey];
+										}
+										ImGui::PopID();
+
+										// If the wheel is open for this group, delegate rendering to ColorWheel implementation
+										auto itOpen = wheelOpenMap.find(wheelKey);
+										if (itOpen != wheelOpenMap.end() && itOpen->second) {
+											bool& openRef = itOpen->second;
+											ColorWheel::Draw(currentChar, group, openRef);
+										}
 
 										ImGui::PopStyleVar();
 									}
+
 								}
 							} //Если JSON нет.
 							else {
@@ -352,7 +371,7 @@ void Drawing::Draw()
 					if (ImGui::BeginTabItem("Auto Load Pallete")) {
 						if (ImGui::Button("Add new Auto Load Pallete")) {
 							AutoPallete::Auto_Pals.push_back(Auto_Pal{ "Filia", 0, "" });
-							AutoPallete::save(); // Добавлено
+							AutoPallete::save();
 						}
 						if (ImGui::Button("Reset Auto Palettes")) {
 							AutoPallete::init();
@@ -361,40 +380,52 @@ void Drawing::Draw()
 
 						for (int i = 0; i < AutoPallete::Auto_Pals.size(); i++) {
 							Auto_Pal& pal = AutoPallete::Auto_Pals[i];
+
+							// Используем PushID для создания уникального пространства имен
 							ImGui::PushID(i);
-							ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.3f, 0.3f, 0.6f, 0.9f)); // синий фон
-							ImGui::BeginChild(ImGui::GetID("pal_group"), ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 4), true, ImGuiWindowFlags_NoDecoration);
+							ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.3f, 0.3f, 0.6f, 0.9f));
 
-							// Создаём таблицу с 3 колонками
-							ImGui::BeginTable("ColorSettings", 3, ImGuiTableFlags_SizingFixedFit);
+							// Уникальный ID для каждого child
+							std::string childId = "pal_group_" + std::to_string(i);
+							ImGui::BeginChild(childId.c_str(), ImVec2(0, ImGui::GetFrameHeightWithSpacing() * 4), true, ImGuiWindowFlags_NoDecoration);
 
-							// Настраиваем колонки
-							ImGui::TableSetupColumn("Labels", ImGuiTableColumnFlags_WidthFixed, 150.0f);  // Метки
-							ImGui::TableSetupColumn("Inputs", ImGuiTableColumnFlags_WidthStretch);        // Текстовые поля
-							ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 175.0f); // Кнопки и числа
+							// Уникальный ID для каждой таблицы
+							std::string tableId = "ColorSettings_" + std::to_string(i);
+							if (!ImGui::BeginTable(tableId.c_str(), 3, ImGuiTableFlags_SizingFixedFit)) {
+								// Если таблица не создана, пропускаем элемент
+								ImGui::EndChild();
+								ImGui::PopStyleColor();
+								ImGui::PopID();
+								continue;
+							}
+							ImVec2 display_size = ImGui::GetIO().DisplaySize;
+
+							// Проценты от ширины экрана (но с ограничениями)
+							float labels_width = display_size.x * 1.1f;  // 11% от ширины экрана
+							float actions_width = display_size.x * 1.4f; // 14% от ширины экрана
+
+							ImGui::TableSetupColumn("Labels", ImGuiTableColumnFlags_WidthFixed, labels_width);
+							ImGui::TableSetupColumn("Inputs", ImGuiTableColumnFlags_WidthStretch);
+							ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, actions_width);
 
 							// Первая строка: Character Name
 							ImGui::TableNextRow();
-
-							// Первая колонка: метка
 							ImGui::TableSetColumnIndex(0);
 							ImGui::AlignTextToFramePadding();
 							ImGui::Text("Character Name");
 
-							// Вторая колонка: текстовое поле
 							ImGui::TableSetColumnIndex(1);
-							char charNameBuffer[256];
-							strncpy_s(charNameBuffer, pal.CharName.c_str(), sizeof(charNameBuffer));
-							charNameBuffer[sizeof(charNameBuffer) - 1] = '\0';
-							ImGui::SetNextItemWidth(-FLT_MIN); // Занимает оставшееся пространство
 							const char* preview_value = pal.CharName.c_str();
+							ImGui::SetNextItemWidth(-FLT_MIN);
 
-							if (ImGui::BeginCombo("##CharacterName", preview_value)) {
+							// Уникальный ID для combo
+							std::string comboId = "##CharacterName_" + std::to_string(i);
+							if (ImGui::BeginCombo(comboId.c_str(), preview_value)) {
 								for (int j = 0; j < IM_ARRAYSIZE(characterNames); j++) {
 									bool isSelected = (pal.CharName == characterNames[j]);
 									if (ImGui::Selectable(characterNames[j], isSelected)) {
 										pal.CharName = characterNames[j];
-										AutoPallete::save(); // Добавлено
+										AutoPallete::save();
 									}
 									if (isSelected) {
 										ImGui::SetItemDefaultFocus();
@@ -403,68 +434,68 @@ void Drawing::Draw()
 								ImGui::EndCombo();
 							}
 
-							// Третья колонка: Label + InputInt
 							ImGui::TableSetColumnIndex(2);
 							ImGui::AlignTextToFramePadding();
 							ImGui::Text("Palette Number");
 							ImGui::SameLine();
-							ImGui::SetNextItemWidth(-FLT_MIN); // Занимает оставшееся пространство
+							ImGui::SetNextItemWidth(-FLT_MIN);
+
+							// Уникальный ID для InputInt
+							std::string palNumId = "##PalNum_" + std::to_string(i);
 							int displayValue = pal.PalNum + 1;
-							if (ImGui::InputInt("##PalNum", &displayValue))
-							{
-								// Ограничиваем минимальное значение 1
+							if (ImGui::InputInt(palNumId.c_str(), &displayValue)) {
 								if (displayValue < 1) displayValue = 1;
 								pal.PalNum = displayValue - 1;
-								AutoPallete::save(); // Добавлено
+								AutoPallete::save();
 							}
 
 							// Вторая строка: Path
 							ImGui::TableNextRow();
-
-							// Первая колонка: метка
 							ImGui::TableSetColumnIndex(0);
 							ImGui::AlignTextToFramePadding();
 							ImGui::Text("Path to the Palette");
 
-							// Вторая колонка: текстовое поле
 							ImGui::TableSetColumnIndex(1);
-							static char pathBuffer[512]; // Убрана статическая для каждого элемента
+							// НЕ статический буфер - создаем локальный для каждого элемента
+							char pathBuffer[512];
 							strncpy_s(pathBuffer, pal.PalPath.c_str(), sizeof(pathBuffer));
 							pathBuffer[sizeof(pathBuffer) - 1] = '\0';
-							ImGui::SetNextItemWidth(-FLT_MIN); // Занимает оставшееся пространство
-							if (ImGui::InputText("##Path", pathBuffer, sizeof(pathBuffer))) {
+							ImGui::SetNextItemWidth(-FLT_MIN);
+
+							// Уникальный ID для InputText
+							std::string pathId = "##Path_" + std::to_string(i);
+							if (ImGui::InputText(pathId.c_str(), pathBuffer, sizeof(pathBuffer))) {
 								pal.PalPath = pathBuffer;
-								AutoPallete::save(); // Добавлено
+								AutoPallete::save();
 							}
 
-							// Третья колонка: кнопка Open
 							ImGui::TableSetColumnIndex(2);
+							// Уникальный ID для кнопки Open
+
 							if (ImGui::Button("Open", ImVec2(-FLT_MIN, 0))) {
-								// Код для открытия
 								const char* filterPatterns[1] = { "*.pal" };
 								const char* filePath = tinyfd_openFileDialog(
-									"Load Pallete",        // заголовок
-									"",                     // начальная директория
-									1,                      // количество фильтров
-									filterPatterns,         // фильтры
-									NULL,                   // описание фильтров
-									0                       // множественный выбор (0 - нет, 1 - да)
+									"Load Pallete",
+									"",
+									1,
+									filterPatterns,
+									NULL,
+									0
 								);
 								if (filePath != NULL) {
 									pal.PalPath = filePath;
-									AutoPallete::save(); // Добавлено
+									AutoPallete::save();
 								}
 							}
 
 							ImGui::EndTable();
-
 							ImGui::Separator();
 
-							// Кнопка Delete под таблицей
+							// Уникальный ID для кнопки Delete
 							if (ImGui::Button("Delete")) {
 								AutoPallete::Auto_Pals.erase(AutoPallete::Auto_Pals.begin() + i);
-								AutoPallete::save(); // Добавлено
-								// После удаления нужно выйти из цикла, так как индексы изменились
+								AutoPallete::save();
+								// После удаления нужно выйти из цикла
 								ImGui::EndChild();
 								ImGui::PopStyleColor();
 								ImGui::PopID();
