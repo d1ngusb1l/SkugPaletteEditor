@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36429.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PaletteEditor_DLL", "PaletteEditorDLL.vcxproj", "{3FADF68E-9201-4351-AB64-0DF66A122597}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "StartUpSkullgirls", "..\StartUpSkullgirls\StartUpSkullgirls.vcxproj", "{1A219336-F3DD-49EA-AFA1-99FA7E0BA28A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_DLL|x86 = Debug_DLL|x86
+		Release_DLL|x86 = Release_DLL|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3FADF68E-9201-4351-AB64-0DF66A122597}.Debug_DLL|x86.ActiveCfg = Release|Win32
+		{3FADF68E-9201-4351-AB64-0DF66A122597}.Debug_DLL|x86.Build.0 = Release|Win32
+		{3FADF68E-9201-4351-AB64-0DF66A122597}.Release_DLL|x86.ActiveCfg = Release|Win32
+		{3FADF68E-9201-4351-AB64-0DF66A122597}.Release_DLL|x86.Build.0 = Release|Win32
+		{1A219336-F3DD-49EA-AFA1-99FA7E0BA28A}.Debug_DLL|x86.ActiveCfg = Debug|Win32
+		{1A219336-F3DD-49EA-AFA1-99FA7E0BA28A}.Debug_DLL|x86.Build.0 = Debug|Win32
+		{1A219336-F3DD-49EA-AFA1-99FA7E0BA28A}.Release_DLL|x86.ActiveCfg = Release|Win32
+		{1A219336-F3DD-49EA-AFA1-99FA7E0BA28A}.Release_DLL|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AE8DC095-AA13-4211-B058-6A667913E19D}
+	EndGlobalSection
+EndGlobal
