@@ -19,6 +19,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
                      )
 {
+    setlocale(LC_ALL, ".UTF8");
+
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:

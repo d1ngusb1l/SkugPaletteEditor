@@ -26,6 +26,7 @@
 //ImGui:
 #include <d3d9.h>
 #include <ImGui/imgui.h>
+#include <ImGui/imgui_internal.h>
 #include <ImGui/imgui_impl_dx9.h>
 #include <ImGui/imgui_impl_win32.h>
 

@@ -121,10 +121,20 @@ UINT IDirect3DDevice9Proxy::GetNumberOfSwapChains(void){
 	return(origIDirect3DDevice9->GetNumberOfSwapChains());
 }
 
-HRESULT IDirect3DDevice9Proxy::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters){
+HRESULT IDirect3DDevice9Proxy::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters) {
 	if (callbacks[PRERESET])
 		((D3D9DevicePreResetFunc)callbacks[PRERESET])();
+
+	// ОЧЕНЬ ВАЖНО: Сначала инвалидируем ресурсы ImGui
+	if (UI::IsInitialized())
+		ImGui_ImplDX9_InvalidateDeviceObjects();
+
 	HRESULT res = (origIDirect3DDevice9->Reset(pPresentationParameters));
+
+	// Восстанавливаем ресурсы ImGui после успешного сброса
+	if (SUCCEEDED(res) && UI::IsInitialized())
+		ImGui_ImplDX9_CreateDeviceObjects();
+
 	if (callbacks[POSTRESET])
 		((D3D9DevicePostResetFunc)callbacks[POSTRESET])(this, res);
 	return res;

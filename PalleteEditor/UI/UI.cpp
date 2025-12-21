@@ -3,6 +3,7 @@
 #include "DirectXWrapper/common.h"
 #include "Drawing.h"
 #include "SetStyleImGui.h"
+#include "DreamOrphans.cpp"
 
 // Static members initialization
 bool UI::s_initialized = false;
@@ -32,6 +33,17 @@ bool UI::Initialize(HWND hwnd, IDirect3DDevice9* device)
     //io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.IniFilename = NULL;
+    //io.Fonts->AddFontDefault();
+
+
+
+    //ImFont* font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(
+    //    DreamOrphans_compressed_data_base85,
+    //    13.0f
+    //);
+
+    // Важно: установить добавленный шрифт как основной
+    //io.FontDefault = font;
     // Set style
     //CherryTheme();
     // Initialize platform/renderer backends
@@ -47,6 +59,7 @@ bool UI::Initialize(HWND hwnd, IDirect3DDevice9* device)
         ImGui_ImplWin32_Shutdown();
         return false;
     }
+
 
     // Hook WndProc
     s_originalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)WndProc);
@@ -83,9 +96,13 @@ void UI::Render()
     if (!s_initialized || !s_visible)
         return;
 
-    BeginFrame();
-    Drawing::Draw();
-    EndFrame();
+    // Проверяем, валидно ли устройство
+    if (s_device && SUCCEEDED(s_device->TestCooperativeLevel()))
+    {
+        BeginFrame();
+        Drawing::Draw();
+        EndFrame();
+    }
 }
 
 void UI::BeginFrame()
@@ -121,9 +138,38 @@ void UI::EndFrame()
 }
 
 LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
+{   
+    if (msg == WM_SIZE)
+    {
+        // При изменении размера окна инвалидируем устройство
+        // Это заставит приложение вызвать Reset()
+        if (UI::IsInitialized() && s_device != NULL)
+        {
+            // Можно добавить дополнительную логику здесь если нужно
+        }
+    }
+    
+    
+    
+    //// Если пипетка активна, блокируем ВСЕ сообщения от мыши и клавиатуры
+    //if (!EyeDropper::getInstance().IsThreadFinished())
+    //{
+    //    // Блокируем все сообщения мыши и клавиатуры
+    //    if ((msg >= WM_LBUTTONDOWN && msg <= WM_MOUSELAST) ||
+    //        (msg >= WM_KEYFIRST && msg <= WM_KEYLAST))
+    //    {
+    //        // Возвращаем 0, чтобы указать, что сообщение обработано
+    //        return 0;
+    //    }
+
+    //    // Для других сообщений продолжаем обычную обработку
+    //    // (например, WM_PAINT, WM_SIZE и т.д.)
+    //}
+
     // Всегда передаем сообщения в ImGui для обработки
     ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+
+
 
     // Получаем состояние ImGui
     ImGuiIO& io = ImGui::GetIO();

@@ -7,7 +7,7 @@
 
 #include "ImGuiCustom.h"
 
-auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::DEBUG_LOG);
+auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::GENERAL_LOG);
 
 PlayableCharactersManager& charMgr = PlayableCharactersManager::instance();
 int& Curent_Index = PlayableCharactersManager::GetCurrentCharacterIndex();
@@ -23,6 +23,7 @@ void Drawing::Draw()
 	{
 		ImGui::SetNextWindowSize(vWindowSize, ImGuiCond_Once);
 		ImGui::SetNextWindowBgAlpha(1.0f);
+
 		ImGui::Begin(lpWindowName, &bDrawAll, WindowFlags);
 		{
 			
@@ -39,6 +40,15 @@ void Drawing::Draw()
 				}
 				if (ImGui::BeginTabItem("Test Page")) {
 					ImGui::Text("Did you want find something here?");
+
+					static bool ShowDemoWindow = true;
+					if (ShowDemoWindow) {
+						ImGui::ShowDemoWindow(&ShowDemoWindow);
+					}
+					ImGui::Checkbox("Show Demo Window", &ShowDemoWindow);
+
+
+
 					//Test things
 					ImGui::EndTabItem();
 				}
@@ -116,6 +126,8 @@ void Drawing::DrawMenuBar() {
 		ImGui::EndMenuBar();
 
 		DrawAboutWindow();
+
+		ImGui::SetNextWindowSize(vFileDialogSize, ImGuiCond_Once);
 
 		if (ImGuiFileDialog::Instance()->Display("SavePaletteFile", ImGuiWindowFlags_NoDocking, { (100.0F), (100.0F) })) {
 
