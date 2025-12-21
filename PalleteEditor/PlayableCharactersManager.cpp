@@ -10,7 +10,7 @@ PlayableCharactersManager::PlayableCharactersManager() {
 }
 
 PlayableCharactersManager* PlayableCharactersManager::s_instance = nullptr;
-auto CharManagerLogger = LOGGER::createLocal("Character Manager", LogLevel::DEBUG_LOG);
+auto CharManagerLogger = LOGGER::createLocal("Character Manager", LogLevel::GENERAL_LOG);
 
 ProcessManager& procMgr = ProcessManager::instance();
 

@@ -56,7 +56,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;IMGUI_DEFINE_MATH_OPERATORS;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;_DEBUG;PALETTEEDITORDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;IMGUI_DEFINE_MATH_OPERATORS;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;_CRT_SECURE_NO_WARNINGS;_DEBUG;PALETTEEDITORDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -78,7 +78,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;IMGUI_DEFINE_MATH_OPERATORS;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;NDEBUG;PALETTEEDITORDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;IMGUI_DEFINE_MATH_OPERATORS;_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR;_CRT_SECURE_NO_WARNINGS;NDEBUG;PALETTEEDITORDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -147,6 +147,7 @@
     <ClCompile Include="ProcessManager.cpp" />
     <ClCompile Include="PlayableCharactersManager.cpp" />
     <ClCompile Include="UI\Drawing.cpp" />
+    <ClCompile Include="UI\DreamOrphans.cpp" />
     <ClCompile Include="UI\ImGuiCustom.cpp" />
     <ClCompile Include="UI\UI.cpp" />
   </ItemGroup>
