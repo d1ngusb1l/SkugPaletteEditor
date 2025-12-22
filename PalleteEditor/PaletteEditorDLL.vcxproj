@@ -96,6 +96,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AddressesTable.h" />
+    <ClInclude Include="AutoLoadPalette.h" />
+    <ClInclude Include="Files\Config.h" />
+    <ClInclude Include="Files\GroupJSONFiles.h" />
     <ClInclude Include="Files\PaletteFiles.h" />
     <ClInclude Include="Include\ImGuiFileDialog\dirent\dirent.h" />
     <ClInclude Include="Include\ImGuiFileDialog\ImGuiFileDialog.h" />
@@ -127,6 +130,7 @@
     <ClInclude Include="UI\UI.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AutoLoadPalette.cpp" />
     <ClCompile Include="DirectXWrapper\DirectXWrapper.cpp" />
     <ClCompile Include="DirectXWrapper\IDirect3D9Proxy.cpp" />
     <ClCompile Include="DirectXWrapper\IDirect3DDevice9Proxy.cpp" />
@@ -134,6 +138,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Files\Config.cpp" />
+    <ClCompile Include="Files\GroupJSONFile.cpp" />
     <ClCompile Include="Files\PaletteFiles.cpp" />
     <ClCompile Include="Include\ImGuiFileDialog\ImGuiFileDialog.cpp" />
     <ClCompile Include="Include\ImGui\imgui.cpp" />

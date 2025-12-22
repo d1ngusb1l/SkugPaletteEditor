@@ -132,6 +132,15 @@
     <ClInclude Include="UI\ImGuiCustom.h">
       <Filter>UI</Filter>
     </ClInclude>
+    <ClInclude Include="Files\GroupJSONFiles.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Files\Config.h">
+      <Filter>Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoLoadPalette.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -193,6 +202,15 @@
     </ClCompile>
     <ClCompile Include="UI\DreamOrphans.cpp">
       <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Files\GroupJSONFile.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Files\Config.cpp">
+      <Filter>Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoLoadPalette.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

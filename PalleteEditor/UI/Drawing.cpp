@@ -1,11 +1,13 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Drawing.h"
 #include "MainThread.h"
 #include "PlayableCharactersManager.h"
 #include "Tools/Colors.hpp"
 #include "Files/PaletteFiles.h"
-
+#include "Files/GroupJSONFiles.h"
 #include "ImGuiCustom.h"
+#include "Files/Config.h"
+#include "AutoLoadPalette.h"
 
 auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::GENERAL_LOG);
 
@@ -28,6 +30,7 @@ void Drawing::Draw()
 		{
 			
 			DrawMenuBar();
+			FileDialog();
 			if (ImGui::BeginTabBar("##TabBar")) {
 
 				if (ImGui::BeginTabItem("Palette")) {
@@ -79,7 +82,6 @@ void Drawing::DrawMenuBar() {
 						ImGui::EndTooltip();
 					}
 				}
-				ImGui::Separator();
 
 				ImGui::TextDisabled("Load Palette");
 				if (ImGui::IsItemHovered()) {
@@ -91,7 +93,7 @@ void Drawing::DrawMenuBar() {
 						ImGui::EndTooltip();
 					}
 				}
-				ImGui::EndMenu();
+
 			}
 			else {
 				if (ImGui::MenuItem("Save Palette"))
@@ -102,8 +104,6 @@ void Drawing::DrawMenuBar() {
 					ImGuiFileDialog::Instance()->OpenDialog("SavePaletteFile", "Save Palette File", ".pal", config);
 				}
 
-				ImGui::Separator();
-
 				if (ImGui::MenuItem("Load Palette"))
 				{
 					IGFD::FileDialogConfig config;
@@ -112,14 +112,22 @@ void Drawing::DrawMenuBar() {
 
 				}
 
-				ImGui::EndMenu();
+
 			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Load JSON (Characters parts)"))
+			{
+				IGFD::FileDialogConfig config;
+				config.path = ".";
+				ImGuiFileDialog::Instance()->OpenDialog("LoadJSON", "Load JSON (Characters parts)", ".json", config);
+			}
+			ImGui::EndMenu();
 		}
 
-		// ������ About ����� � ���� ����
+		// Кнопка About прямо в меню баре
 		if (ImGui::MenuItem("About"))
 		{
-			// ��������� ���� About ��� �������
+			// Открываем окно About при нажатии
 			bDrawAboutWindow = true;
 
 		}
@@ -129,31 +137,7 @@ void Drawing::DrawMenuBar() {
 
 		ImGui::SetNextWindowSize(vFileDialogSize, ImGuiCond_Once);
 
-		if (ImGuiFileDialog::Instance()->Display("SavePaletteFile", ImGuiWindowFlags_NoDocking, { (100.0F), (100.0F) })) {
 
-			if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
-
-				std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-
-				PalleteFile::SaveToFile(filePathName);
-			}
-
-			// close
-			ImGuiFileDialog::Instance()->Close();
-		}
-
-		if (ImGuiFileDialog::Instance()->Display("LoadPaletteFile", ImGuiWindowFlags_NoDocking, { (100.0F), (100.0F) })) {
-
-			if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
-
-				std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
-
-				PalleteFile::LoadFromFile(filePathName);
-			}
-
-			// close
-			ImGuiFileDialog::Instance()->Close();
-		}
 
 	}
 }
@@ -230,7 +214,7 @@ void Drawing::DrawPlayableCharactersComboBox() {
 					LOG_LOCAL_WARN(DrawingLogger, "We are trying to select an already selected character.");
 					continue;
 				}
-				// ��������� ID ���������� ���������
+				// Сохраняем ID выбранного персонажа
 				LOG_LOCAL_DEBUG(DrawingLogger, "Choose new Playable Character ", allCharsNames[i].value(), " at ", i);
 				charMgr.SetCurrentCharacterIndex(i);
 				charMgr.LoadCharacter();
@@ -268,22 +252,23 @@ void Drawing::DrawCharacterOptions() {
 		MainThread::b_DisplaySuperShadows.store(Drawing_DisplaySuperShadows); //And now, we save this in our atomic bool
 	}
 
+	ImGui::Checkbox("Group Character Parts", &bDrawColorGroup);
 }
 
 void Drawing::DrawCharacterPaletteNumSlider() {
 	int displayValue = Curent_Char.Current_Palette_Num + 1;
 
 	if (ImGui::SliderInt("Palette Number##", &displayValue, 1, Curent_Char.Max_Palette_Num)) {
-		// �������� 1 ��� ��������� ��������� ������� (0-based)
+		// Вычитаем 1 для получения реального индекса (0-based)
 		int newPaletteIndex = displayValue - 1;
 
-		// ���������, ������������� �� �������� ����������
+		// Проверяем, действительно ли значение изменилось
 		if (newPaletteIndex != Curent_Char.Current_Palette_Num) {
 			PlayableCharactersManager::ChangePaletteNumber(newPaletteIndex);
 		}
 	}
 
-	// ����� �������� ����������� �������� ��������
+	// Можно добавить отображение текущего значения
 	ImGui::SameLine();
 	ImGui::Text("(%d/%d)", displayValue, Curent_Char.Max_Palette_Num);
 }
@@ -292,8 +277,6 @@ void Drawing::DrawCharacterColors() {
 
 	ImGui::Text("Colors: ");
 	ImGui::Spacing();
-
-	auto& colors = Curent_Char.Character_Colors;
 
 	//First of all, we change BGRA to RGBA
 	ImU32 colorLineColorRGBA_U32 = ColorsTools::SwapRBChannels(Curent_Char.LineColor);
@@ -355,8 +338,86 @@ void Drawing::DrawCharacterColors() {
 
 	ImGui::Spacing();
 	ImGui::Text("Colors Palette: %d", Curent_Char.Num_Of_Color);
+	if (GroupColorManager::GetInstance().HasData() and bDrawColorGroup){
+	
+		GroupColors();
+	}
+	else {
+		UnGroupColors();
+	}
 
-	// �������������� ������ ��������
+
+	
+}
+
+void Drawing::GroupColors() {
+	auto& colors = Curent_Char.Character_Colors;
+	if (auto groupsPtr = GroupColorManager::GetInstance().GetGroupsForCharacter(Curent_Char.Char_Name)) {
+		const auto& groups = *groupsPtr;
+
+		// Отображаем с группировкой
+		for (const auto& group : groups) {
+			// Добавляем ImGuiTreeNodeFlags_DefaultOpen для открытого состояния по умолчанию
+			if (ImGui::CollapsingHeader(group.groupName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+				// Используем стиль без отступов для более плотного расположения
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+
+				// Отображаем цвета в группе
+				for (int i = group.startIndex;
+					i < group.startIndex + group.count && i < colors.size();
+					i++) {
+
+					ImGui::PushID(i);
+					//First of all, we change BGRA to RGBA
+					ImU32 colorRGBA_U32 = ColorsTools::SwapRBChannels(colors[i]);
+					//Then, we change ImU32 to ImVec4, for ColorEdit4 correct work
+					ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(colorRGBA_U32);
+
+					// Кнопка цвета
+					if (ImGuiCustom::ColorEdit4(
+						("##color_" + std::to_string(i)).c_str(),
+						&colorVec.x, //Pass the address of the first element (x) to a function expecting float[4]
+						ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar
+					))
+					{
+						LOG_LOCAL_DEBUG(DrawingLogger, "Change color at index: ");
+						LOG_LOCAL_VARIABLE(DrawingLogger, i);
+						LOG_LOCAL_DEBUG(DrawingLogger, "Change color to: ");
+						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.x);
+						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.y);
+						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.z);
+						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.w);
+						LOG_LOCAL_DEBUG(DrawingLogger, "Red, Green, Blue, Alpha");
+						//First, we change from float ImVec4 to ImU32 (__int32)
+						ImU32 ColorToWrite = ImGui::ColorConvertFloat4ToU32(colorVec);
+						//Then, we change BGRA to RGBA
+						ColorToWrite = ColorsTools::SwapRBChannels(ColorToWrite);
+						PlayableCharactersManager::ChangePaletteColor(i, ColorToWrite);
+					}
+
+
+					ImGui::PopID();
+
+					// Используем SameLine() с проверкой, помещается ли следующий элемент
+					bool isLastInGroup = (i == group.startIndex + group.count - 1);
+					bool isLastValidColor = (i == colors.size() - 1);
+
+					if (!isLastInGroup && !isLastValidColor) {
+						ImGui::SameLine();
+					}
+				}
+				ImGui::PopStyleVar();
+			}
+		}
+	}
+	else {
+		LOG_LOCAL_ERROR(DrawingLogger, "Can't find JSON for Character");
+		UnGroupColors();
+	}
+}
+void Drawing::UnGroupColors() {
+	auto& colors = Curent_Char.Character_Colors;
+	// Автоматический расчет столбцов
 	float availableWidth = ImGui::GetContentRegionAvail().x;
 	float colorButtonSize = ImGui::GetFrameHeight();
 	float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
@@ -364,7 +425,7 @@ void Drawing::DrawCharacterColors() {
 	int colorsPerRow = (int)(availableWidth / (colorButtonSize + itemSpacing));
 	if (colorsPerRow < 1) colorsPerRow = 1;
 
-	// ������� ��� ������� ������
+	// Счетчик для текущей строки
 	int currentColumn = 0;
 
 	for (int i = 1; i < colors.size(); i++) { //We start from second (1) color, becouse first color doesn't affect anything
@@ -374,9 +435,9 @@ void Drawing::DrawCharacterColors() {
 		//Then, we change ImU32 to ImVec4, for ColorEdit4 correct work
 		ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(colorRGBA_U32);
 
-		// ������ �����
+		// Кнопка цвета
 		if (ImGuiCustom::ColorEdit4(
-			("##color_" + std::to_string(i)).c_str(), 
+			("##color_" + std::to_string(i)).c_str(),
 			&colorVec.x, //Pass the address of the first element (x) to a function expecting float[4]
 			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar
 		))
@@ -399,7 +460,7 @@ void Drawing::DrawCharacterColors() {
 
 		ImGui::PopID();
 
-		// ������, ��������� SameLine ��� ���������� �� ����� ������
+		// Решаем, добавлять SameLine или переходить на новую строку
 		currentColumn++;
 		if (currentColumn < colorsPerRow && i < colors.size() - 1) {
 			ImGui::SameLine(0, itemSpacing);
@@ -412,6 +473,203 @@ void Drawing::DrawCharacterColors() {
 
 void Drawing::DrawAutoLoadPaletteTabItem() {
 
-	ImGui::Text("Just test! Auto Load Palette Page");
+	if (ImGui::Button("Add new Auto Load Pallete")) {
+		AutoPalette::Auto_Pals.push_back(Auto_Pal{ "Filia", 0, "" });
+		AutoPalette::save(); //We save new AutoPal
+	}
+	if (ImGui::Button("Reset Auto Palettes")) {
+		AutoPalette::init();
+	}
+	ImGui::Separator();
 
+	for (int i = 0; i < AutoPalette::Auto_Pals.size(); i++) {
+		Auto_Pal& pal = AutoPalette::Auto_Pals[i];
+
+		ImGui::PushID(i);
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.3f, 0.3f, 0.6f, 0.9f));
+
+		// Группируем каждый элемент в Child с адаптивной высотой
+		std::string childId = "AutoPal_group_" + std::to_string(i);
+
+		// Используем флаг для авто-размера вместо фиксированной высоты
+		ImGui::BeginChild(childId.c_str(), ImVec2(0, 0), ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding, 0);
+
+		// === Первая строка: Выбор персонажа и номер палитры ===
+		
+		ImGui::BeginGroup();
+		{
+			// Левая часть: Название + Combo
+			ImGui::BeginGroup();
+			ImGui::Text("Character Name");
+			ImGui::SameLine();
+
+			const char* preview_value = pal.CharName.c_str();
+			std::string comboId = "##CharacterName_" + std::to_string(i);
+
+			// Автоматическая ширина для Combo (50% от доступного пространства)
+			float comboWidth = ImGui::GetContentRegionAvail().x * 0.5f - ImGui::GetStyle().ItemSpacing.x * 2;
+			comboWidth = std::max(comboWidth, 100.0f); // Минимальная ширина
+			ImGui::SetNextItemWidth(comboWidth);
+
+			if (ImGui::BeginCombo(comboId.c_str(), preview_value)) {
+				for (int j = 0; j < IM_ARRAYSIZE(PlayableCharacterNames); j++) {
+					bool isSelected = (pal.CharName == PlayableCharacterNames[j]);
+					if (ImGui::Selectable(PlayableCharacterNames[j], isSelected)) {
+						pal.CharName = PlayableCharacterNames[j];
+						AutoPalette::save();
+					}
+					if (isSelected) {
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::EndGroup();
+
+			// Правая часть: Номер палитры
+			ImGui::SameLine(0, ImGui::GetStyle().ItemSpacing.x * 2); // Больший отступ
+
+			ImGui::BeginGroup();
+			ImGui::Text("Palette #");
+			ImGui::SameLine();
+
+			std::string palNumId = "##PalNum_" + std::to_string(i);
+			int displayValue = pal.PalNum + 1;
+
+			// Фиксированная ширина для InputInt (ширина для 3-4 цифр)
+			ImGui::SetNextItemWidth(ImGui::CalcTextSize("00000000").x + ImGui::GetStyle().FramePadding.x * 2);
+			if (ImGui::InputInt(palNumId.c_str(), &displayValue)) {
+				if (displayValue < 1) displayValue = 1;
+				pal.PalNum = displayValue - 1;
+				AutoPalette::save();
+			}
+			ImGui::EndGroup();
+		}
+		ImGui::EndGroup();
+
+		ImGui::Spacing(); // Отступ между строками
+
+		// === Вторая строка: Путь к палитре ===
+		ImGui::BeginGroup();
+		{
+			// Текст слева
+			ImGui::Text("Path to the Palette");
+			ImGui::SameLine();
+
+			// Группа для InputText и кнопки
+			ImGui::BeginGroup();
+			{
+				char pathBuffer[512];
+				strncpy_s(pathBuffer, pal.PalPath.c_str(), sizeof(pathBuffer));
+				pathBuffer[sizeof(pathBuffer) - 1] = '\0';
+				std::string pathId = "##Path_" + std::to_string(i);
+
+				// InputText занимает всё доступное пространство минус кнопка
+				float availableWidth = ImGui::GetContentRegionAvail().x;
+				float buttonWidth = ImGui::CalcTextSize("Open").x + ImGui::GetStyle().FramePadding.x * 2;
+				float inputWidth = availableWidth - buttonWidth - ImGui::GetStyle().ItemSpacing.x;
+
+				ImGui::PushItemWidth(inputWidth);
+				if (ImGui::InputText(pathId.c_str(), pathBuffer, sizeof(pathBuffer), ImGuiInputTextFlags_ElideLeft)) {
+					pal.PalPath = pathBuffer;
+					AutoPalette::save();
+				}
+				ImGui::PopItemWidth();
+
+				// Кнопка "Open" на той же строке
+				ImGui::SameLine();
+				if (ImGui::Button("Open")) {
+					IGFD::FileDialogConfig config;
+					config.path = ".";
+					config.userDatas = reinterpret_cast<void*>(&pal);
+					ImGuiFileDialog::Instance()->OpenDialog("LoadPaletteFile_AutoLoad", "Load Palette File for Auto Loading", ".pal", config);
+				}
+			}
+			ImGui::EndGroup();
+		}
+		ImGui::EndGroup();
+
+		ImGui::Spacing(); // Отступ перед разделителем
+
+		ImGui::Separator();
+
+		ImGui::Spacing(); // Отступ после разделителя
+
+		// === Третья строка: Кнопка Delete ===
+		// Центрируем кнопку Delete
+
+		
+		if (ImGui::Button("Delete")) {
+			AutoPalette::Auto_Pals.erase(AutoPalette::Auto_Pals.begin() + i);
+			AutoPalette::save();
+		}
+
+		ImGui::EndChild();
+		ImGui::PopStyleColor();
+		ImGui::PopID();
+
+		//// Отступ между элементами списка
+		//if (i < AutoPallete::Auto_Pals.size() - 1) {
+		//	ImGui::Dummy(ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
+		//}
+	}
+
+}
+
+
+void Drawing::FileDialog() {
+	if (ImGuiFileDialog::Instance()->Display("SavePaletteFile", ImGuiWindowFlags_NoDocking)) {
+
+		if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+
+			PalleteFile::SaveToFile(filePathName);
+		}
+
+		// close
+		ImGuiFileDialog::Instance()->Close();
+	}
+
+	if (ImGuiFileDialog::Instance()->Display("LoadPaletteFile", ImGuiWindowFlags_NoDocking)) {
+
+		if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+
+			PalleteFile::LoadFromFile(filePathName);
+		}
+
+		// close
+		ImGuiFileDialog::Instance()->Close();
+	}
+
+	if (ImGuiFileDialog::Instance()->Display("LoadJSON", ImGuiWindowFlags_NoDocking)) {
+
+		if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+
+			GroupColorManager::GetInstance().LoadFromFile(filePathName);
+			config::set_string("CharPart", filePathName);
+		}
+
+		// close
+		ImGuiFileDialog::Instance()->Close();
+	}
+
+	if (ImGuiFileDialog::Instance()->Display("LoadPaletteFile_AutoLoad", ImGuiWindowFlags_NoDocking)) {
+
+		if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
+
+			std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+			Auto_Pal* palPtr = reinterpret_cast<Auto_Pal*>(ImGuiFileDialog::Instance()->GetUserDatas());
+			palPtr->PalPath = filePathName;
+
+			AutoPalette::save();
+		}
+
+		// close
+		ImGuiFileDialog::Instance()->Close();
+	}
 }
