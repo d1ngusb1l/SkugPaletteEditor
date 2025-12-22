@@ -3,12 +3,15 @@
 #endif // !_CRT_SECURE_NO_WARNINGS
 
 #include "ImGuiCustom.h"
+#include "EyeDropper.h"
+
 
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 
 
 using namespace ImGui;
+
 static void ColorEditRestoreHS(const float* col, float* H, float* S, float* V)
 {
     ImGuiContext& g = *GImGui;
@@ -272,4 +275,13 @@ bool ImGuiCustom::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlag
         MarkItemEdited(g.LastItemData.ID);
 
     return value_changed;
+}
+
+bool ImGuiCustom::EyeDropperButton(const char* label, float* col) {
+    // Simple button. If clicked, we activate the global EyeDropper state.
+    if (ImGui::Button(label)) {
+        EyeDropper::Get().Start(col);
+        return true;
+    }
+    return false;
 }

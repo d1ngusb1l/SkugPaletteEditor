@@ -32,4 +32,6 @@ private:
 	static void UnGroupColors();
 
 	static void DrawAutoLoadPaletteTabItem();
+
+	static void DrawDeveloperTestWindow();
 };

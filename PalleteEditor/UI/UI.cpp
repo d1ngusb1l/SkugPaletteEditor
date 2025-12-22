@@ -4,6 +4,7 @@
 #include "Drawing.h"
 #include "SetStyleImGui.h"
 #include "DreamOrphans.cpp"
+#include "EyeDropper.h"
 
 // Static members initialization
 bool UI::s_initialized = false;
@@ -42,7 +43,7 @@ bool UI::Initialize(HWND hwnd, IDirect3DDevice9* device)
     //    13.0f
     //);
 
-    // Важно: установить добавленный шрифт как основной
+    // пїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     //io.FontDefault = font;
     // Set style
     //CherryTheme();
@@ -96,7 +97,7 @@ void UI::Render()
     if (!s_initialized || !s_visible)
         return;
 
-    // Проверяем, валидно ли устройство
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     if (s_device && SUCCEEDED(s_device->TestCooperativeLevel()))
     {
         BeginFrame();
@@ -118,73 +119,97 @@ void UI::BeginFrame()
 
 void UI::EndFrame()
 {
-    if (!s_initialized)
-        return;
-
-    // Rendering
-    ImGui::EndFrame();
     ImGui::Render();
-
-    // Actually render to DirectX9
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
-    // Update and Render additional Platform Windows
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
+        // FULLSCREEN CRASH GUARD:
+        // DX9 will crash if we try to RenderPlatformWindows while in Exclusive Fullscreen.
+        WINDOWPLACEMENT placement = { sizeof(WINDOWPLACEMENT) };
+        GetWindowPlacement(s_hwnd, &placement);
+        bool isFullscreen = (placement.showCmd == SW_SHOWMAXIMIZED); // Simplified check
+
+        if (!isFullscreen) 
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            s_device->SetRenderState(D3DRS_SRGBWRITEENABLE, FALSE);
+        }
     }
 }
 
-LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{   
-    if (msg == WM_SIZE)
-    {
-        // При изменении размера окна инвалидируем устройство
-        // Это заставит приложение вызвать Reset()
-        if (UI::IsInitialized() && s_device != NULL)
-        {
-            // Можно добавить дополнительную логику здесь если нужно
+LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (EyeDropper::Get().IsActive()) {
+        // Force capture so we get mouse move/clicks outside the window
+        if (::GetCapture() != hWnd) ::SetCapture(hWnd);
+
+        // Update ImGui's internal state so the picker knows where the mouse is
+        ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+
+        // THE FIX: Return 0 for ALL mouse and keyboard messages.
+        // This makes the picker "modal" and prevents the game/UI from reacting.
+        if ((msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) || (msg >= WM_KEYFIRST && msg <= WM_KEYLAST)) {
+            return 0; 
         }
     }
-    
-    
-    
-    //// Если пипетка активна, блокируем ВСЕ сообщения от мыши и клавиатуры
-    //if (!EyeDropper::getInstance().IsThreadFinished())
-    //{
-    //    // Блокируем все сообщения мыши и клавиатуры
-    //    if ((msg >= WM_LBUTTONDOWN && msg <= WM_MOUSELAST) ||
-    //        (msg >= WM_KEYFIRST && msg <= WM_KEYLAST))
-    //    {
-    //        // Возвращаем 0, чтобы указать, что сообщение обработано
-    //        return 0;
-    //    }
 
-    //    // Для других сообщений продолжаем обычную обработку
-    //    // (например, WM_PAINT, WM_SIZE и т.д.)
-    //}
-
-    // Всегда передаем сообщения в ImGui для обработки
-    ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
-
-
-
-    // Получаем состояние ImGui
-    ImGuiIO& io = ImGui::GetIO();
-
-    // Блокируем сообщения мыши, если ImGui хочет их обработать
-    if (((msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) && io.WantCaptureMouse) && s_visible)
-    {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
-    }
-
-    // Блокируем сообщения клавиатуры, если ImGui хочет их обработать
-    if (((msg >= WM_KEYFIRST && msg <= WM_KEYLAST) && io.WantCaptureKeyboard) && s_visible)
-    {
-        return true;
-    }
 
     return CallWindowProc(s_originalWndProc, hWnd, msg, wParam, lParam);
 }
+
+
+
+// LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+// {   
+//     if (msg == WM_SIZE)
+//     {
+//         // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//         // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ Reset()
+//         if (UI::IsInitialized() && s_device != NULL)
+//         {
+//             // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+//         }
+//     }
+    
+    
+    
+//     //// пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     //if (!EyeDropper::getInstance().IsThreadFinished())
+//     //{
+//     //    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     //    if ((msg >= WM_LBUTTONDOWN && msg <= WM_MOUSELAST) ||
+//     //        (msg >= WM_KEYFIRST && msg <= WM_KEYLAST))
+//     //    {
+//     //        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 0, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     //        return 0;
+//     //    }
+
+//     //    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     //    // (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, WM_PAINT, WM_SIZE пїЅ пїЅ.пїЅ.)
+//     //}
+
+//     // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ ImGui пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+
+
+
+//     // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ ImGui
+//     ImGuiIO& io = ImGui::GetIO();
+
+//     // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ ImGui пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     if (((msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) && io.WantCaptureMouse) && s_visible)
+//     {
+//         return true;
+//     }
+
+//     // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ ImGui пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+//     if (((msg >= WM_KEYFIRST && msg <= WM_KEYLAST) && io.WantCaptureKeyboard) && s_visible)
+//     {
+//         return true;
+//     }
+
+//     return CallWindowProc(s_originalWndProc, hWnd, msg, wParam, lParam);
+// }

@@ -8,6 +8,7 @@
 #include "ImGuiCustom.h"
 #include "Files/Config.h"
 #include "AutoLoadPalette.h"
+#include "EyeDropper.h"
 
 auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::GENERAL_LOG);
 
@@ -17,6 +18,7 @@ auto& Curent_Char = PlayableCharactersManager::GetCurrentCharacter();
 
 void Drawing::Draw()
 {
+
 	if (GetAsyncKeyState(VK_INSERT) & 1) {
 		bDrawAll = !bDrawAll;
 	}
@@ -29,6 +31,8 @@ void Drawing::Draw()
 		ImGui::Begin(lpWindowName, &bDrawAll, WindowFlags);
 		{
 			
+			EyeDropper::Get().Update();
+
 			DrawMenuBar();
 			FileDialog();
 			if (ImGui::BeginTabBar("##TabBar")) {
@@ -55,6 +59,13 @@ void Drawing::Draw()
 					//Test things
 					ImGui::EndTabItem();
 				}
+
+				// NEW: Developer Test Tab
+                if (ImGui::BeginTabItem("Dev Tools")) {
+                    DrawDeveloperTestWindow();
+                    ImGui::EndTabItem();
+                }
+
 				ImGui::EndTabBar();
 			}
 			
@@ -616,6 +627,30 @@ void Drawing::DrawAutoLoadPaletteTabItem() {
 
 }
 
+void Drawing::DrawDeveloperTestWindow() {
+    static float testColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+    ImGui::Text("Eyedropper Testerrrr");
+    ImGui::Separator();
+
+    // Show current color state
+    ImGui::ColorButton("##current", *(ImVec4*)&testColor, ImGuiColorEditFlags_NoPicker, ImVec2(100, 40));
+    ImGui::SameLine();
+    ImGui::Text("Current Color: #%02X%02X%02X", 
+        (int)(testColor[0] * 255), (int)(testColor[1] * 255), (int)(testColor[2] * 255));
+
+    ImGui::Spacing();
+
+    // The logic: pass the address of our testColor array
+    if (ImGuiCustom::EyeDropperButton("Launch Item Picker (Color)", testColor)) {
+        LOG_LOCAL_INFO(DrawingLogger, "Eyedropper test started");
+    }
+
+    ImGui::BulletText("Click the button above.");
+    ImGui::BulletText("Move mouse over the game or other windows.");
+    ImGui::BulletText("Click Left Mouse to select color.");
+    ImGui::BulletText("Press ESC to cancel.");
+}
 
 void Drawing::FileDialog() {
 	if (ImGuiFileDialog::Instance()->Display("SavePaletteFile", ImGuiWindowFlags_NoDocking)) {
