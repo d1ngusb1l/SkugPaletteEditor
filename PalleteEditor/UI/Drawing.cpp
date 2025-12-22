@@ -11,7 +11,7 @@
 
 #include "UI/Eyedropper/Eyedropper.h"
 
-auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::DEBUG_LOG);
+auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::GENERAL_LOG);
 
 PlayableCharactersManager& charMgr = PlayableCharactersManager::instance();
 int& Curent_Index = PlayableCharactersManager::GetCurrentCharacterIndex();
@@ -714,6 +714,31 @@ void Drawing::DrawColorPickerWindow() {
 			ImGuiColorEditFlags_AlphaBar,
 			&refColorVec.x);
 
+		ImGui::Separator();
+		if (ImGui::Button("Eyedropper")) {
+			EyeDropper::getInstance().StartEyedropper(&colorVec.x);
+		}
+
+		// Проверяем, завершилась ли пипетка (и не была отменена)
+		if (EyeDropper::getInstance().IsThreadFinished()) {
+			if (EyeDropper::getInstance().WasCancelled()) {
+				// Пипетка была отменена - возвращаем предыдущий цвет
+				colorVec.x = refColorVec.x;
+				colorVec.y = refColorVec.y;
+				colorVec.z = refColorVec.z;
+				colorVec.w = refColorVec.w;
+				colorChanged = true;
+			}
+		}
+
+		// Во время работы пипетки показываем предпросмотр
+		if (!EyeDropper::getInstance().IsThreadFinished()) {
+			ImVec4 EyeDropperColor = EyeDropper::getInstance().GetColorUnderCursorImVec4();
+			colorVec.x = EyeDropperColor.x;
+			colorVec.y = EyeDropperColor.y;
+			colorVec.z = EyeDropperColor.z;
+			colorChanged = true;
+		}
 		if (colorChanged) {
 			ProcessColorChange(m_ActiveColorIndex, colorVec);
 		}
