@@ -141,75 +141,26 @@ void UI::EndFrame()
 
 LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (EyeDropper::Get().IsActive()) {
-        // Force capture so we get mouse move/clicks outside the window
-        if (::GetCapture() != hWnd) ::SetCapture(hWnd);
+        // REPLICATING IMGUI ITEM PICKER:
+        // We capture the mouse so clicks anywhere on the screen come to THIS window.
+        if (msg == WM_LBUTTONDOWN || msg == WM_RBUTTONDOWN) {
+            if (::GetCapture() != hWnd) ::SetCapture(hWnd);
+        }
 
-        // Update ImGui's internal state so the picker knows where the mouse is
+        // We MUST call the ImGui handler first so ImGui knows where the mouse is.
         ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 
-        // THE FIX: Return 0 for ALL mouse and keyboard messages.
-        // This makes the picker "modal" and prevents the game/UI from reacting.
+        // EAT THE INPUT: 
+        // By returning 0 here, the game (Skullgirls) never receives the WM_LBUTTONDOWN.
+        // This is why the picker "eats" individual clicks.
         if ((msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) || (msg >= WM_KEYFIRST && msg <= WM_KEYLAST)) {
             return 0; 
         }
     }
 
+    // Normal operation
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
 
     return CallWindowProc(s_originalWndProc, hWnd, msg, wParam, lParam);
 }
-
-
-
-// LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-// {   
-//     if (msg == WM_SIZE)
-//     {
-//         // ��� ��������� ������� ���� ������������ ����������
-//         // ��� �������� ���������� ������� Reset()
-//         if (UI::IsInitialized() && s_device != NULL)
-//         {
-//             // ����� �������� �������������� ������ ����� ���� �����
-//         }
-//     }
-    
-    
-    
-//     //// ���� ������� �������, ��������� ��� ��������� �� ���� � ����������
-//     //if (!EyeDropper::getInstance().IsThreadFinished())
-//     //{
-//     //    // ��������� ��� ��������� ���� � ����������
-//     //    if ((msg >= WM_LBUTTONDOWN && msg <= WM_MOUSELAST) ||
-//     //        (msg >= WM_KEYFIRST && msg <= WM_KEYLAST))
-//     //    {
-//     //        // ���������� 0, ����� �������, ��� ��������� ����������
-//     //        return 0;
-//     //    }
-
-//     //    // ��� ������ ��������� ���������� ������� ���������
-//     //    // (��������, WM_PAINT, WM_SIZE � �.�.)
-//     //}
-
-//     // ������ �������� ��������� � ImGui ��� ���������
-//     ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
-
-
-
-//     // �������� ��������� ImGui
-//     ImGuiIO& io = ImGui::GetIO();
-
-//     // ��������� ��������� ����, ���� ImGui ����� �� ����������
-//     if (((msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) && io.WantCaptureMouse) && s_visible)
-//     {
-//         return true;
-//     }
-
-//     // ��������� ��������� ����������, ���� ImGui ����� �� ����������
-//     if (((msg >= WM_KEYFIRST && msg <= WM_KEYLAST) && io.WantCaptureKeyboard) && s_visible)
-//     {
-//         return true;
-//     }
-
-//     return CallWindowProc(s_originalWndProc, hWnd, msg, wParam, lParam);
-// }
