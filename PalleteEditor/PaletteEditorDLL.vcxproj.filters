@@ -141,6 +141,9 @@
     <ClInclude Include="AutoLoadPalette.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="UI\Eyedropper\Eyedropper.h">
+      <Filter>UI\EyeDropper</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -211,6 +214,12 @@
     </ClCompile>
     <ClCompile Include="AutoLoadPalette.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\PixelCode.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Eyedropper\Eyedropper.cpp">
+      <Filter>UI\EyeDropper</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

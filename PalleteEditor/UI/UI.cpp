@@ -4,6 +4,8 @@
 #include "Drawing.h"
 #include "SetStyleImGui.h"
 #include "DreamOrphans.cpp"
+#include "PixelCode.cpp"
+#include "Eyedropper/Eyedropper.h"
 
 // Static members initialization
 bool UI::s_initialized = false;
@@ -12,7 +14,23 @@ HWND UI::s_hwnd = nullptr;
 IDirect3DDevice9* UI::s_device = nullptr;
 WNDPROC UI::s_originalWndProc = nullptr;
 
+extern "C" UINT WINAPI D3D9DeviceFuncHook(UINT funcId, void* funcRef); //For callback's
+
+
 auto UILogger = LOGGER::createLocal("UI", LogLevel::DEBUG_LOG);
+
+void UI::ResizePreReset() {
+    if (UI::IsInitialized())
+        ImGui_ImplDX9_InvalidateDeviceObjects();
+}
+void UI::ResizePostReset(IDirect3DDevice9* device, HRESULT res) {
+    if (SUCCEEDED(res) && UI::IsInitialized())
+        ImGui_ImplDX9_CreateDeviceObjects();
+}
+void UI::RenderPostPresent(IDirect3DDevice9* device, HRESULT res) {
+    if (UI::IsInitialized() && UI::IsVisible())
+        UI::Render();
+}
 
 bool UI::Initialize(HWND hwnd, IDirect3DDevice9* device)
 {
@@ -37,13 +55,12 @@ bool UI::Initialize(HWND hwnd, IDirect3DDevice9* device)
 
 
 
-    //ImFont* font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(
-    //    DreamOrphans_compressed_data_base85,
-    //    13.0f
-    //);
+    ImFont* font = io.Fonts->AddFontFromMemoryCompressedBase85TTF(
+        PixelCode_compressed_data_base85,
+        18.0f
+    );
 
-    // Важно: установить добавленный шрифт как основной
-    //io.FontDefault = font;
+    io.FontDefault = font;
     // Set style
     //CherryTheme();
     // Initialize platform/renderer backends
@@ -60,7 +77,10 @@ bool UI::Initialize(HWND hwnd, IDirect3DDevice9* device)
         return false;
     }
 
-
+    //Anothes hooks for DirectXWrapper
+    D3D9DeviceFuncHook(PRERESET, (void*)ResizePreReset);
+    D3D9DeviceFuncHook(POSTRESET, (void*)ResizePostReset);
+    D3D9DeviceFuncHook(ENDSCENE, (void*)RenderPostPresent);
     // Hook WndProc
     s_originalWndProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (LONG_PTR)WndProc);
 
@@ -151,20 +171,20 @@ LRESULT CALLBACK UI::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     
     
     
-    //// Если пипетка активна, блокируем ВСЕ сообщения от мыши и клавиатуры
-    //if (!EyeDropper::getInstance().IsThreadFinished())
-    //{
-    //    // Блокируем все сообщения мыши и клавиатуры
-    //    if ((msg >= WM_LBUTTONDOWN && msg <= WM_MOUSELAST) ||
-    //        (msg >= WM_KEYFIRST && msg <= WM_KEYLAST))
-    //    {
-    //        // Возвращаем 0, чтобы указать, что сообщение обработано
-    //        return 0;
-    //    }
+    // Если пипетка активна, блокируем ВСЕ сообщения от мыши и клавиатуры
+    if (!EyeDropper::getInstance().IsThreadFinished())
+    {
+        // Блокируем все сообщения мыши и клавиатуры
+        if ((msg >= WM_LBUTTONDOWN && msg <= WM_MOUSELAST) ||
+            (msg >= WM_KEYFIRST && msg <= WM_KEYLAST))
+        {
 
-    //    // Для других сообщений продолжаем обычную обработку
-    //    // (например, WM_PAINT, WM_SIZE и т.д.)
-    //}
+            return true;
+        }
+
+        // Для других сообщений продолжаем обычную обработку
+        // (например, WM_PAINT, WM_SIZE и т.д.)
+    }
 
     // Всегда передаем сообщения в ImGui для обработки
     ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);

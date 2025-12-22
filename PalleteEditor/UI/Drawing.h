@@ -11,8 +11,17 @@ private:
 	inline static bool bDrawAll = true;
 	inline static bool bDrawAboutWindow = false;
 	inline static bool bDrawColorGroup = true;
+#ifdef _DEBUG
+	inline static bool bDrawDevWindow = true;
+	inline static bool bDrawConsole = true;
+#else
+	inline static bool bDrawDevWindow = false;
+	inline static bool bDrawConsole = false;
+#endif
 	inline static LPDIRECT3DDEVICE9 pD3DDevice = nullptr;;
 
+	inline static bool bUseColorPickerMode = false;
+	inline static int m_ActiveColorIndex = 1;
 public:
 	static void Draw();
 
@@ -20,7 +29,8 @@ private:
 	//Our draw functions, for understanding and editing
 	static void DrawMenuBar();
 	static void DrawAboutWindow();
-	static void FileDialog();
+	static void DrawFileDialog();
+	static void DrawColorPickerWindow();
 
 	static void DrawPaletteTabItem(); //Below Palette Tab Item Stuff ↓
 
@@ -28,8 +38,10 @@ private:
 	static void DrawCharacterPaletteNumSlider();
 	static void DrawCharacterOptions();
 	static void DrawCharacterColors();
-	static void GroupColors();
-	static void UnGroupColors();
+	static void DrawColorButton(int index, ImU32 colorU32);
+	static void ProcessColorChange(int index, const ImVec4& colorVec);
 
 	static void DrawAutoLoadPaletteTabItem();
+
+	static void DrawDevWindow();
 };

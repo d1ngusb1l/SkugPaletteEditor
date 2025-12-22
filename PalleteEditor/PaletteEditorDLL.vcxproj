@@ -125,6 +125,7 @@
     <ClInclude Include="Tools\MemoryWorker.hpp" />
     <ClInclude Include="Tools\StringFormating.hpp" />
     <ClInclude Include="UI\Drawing.h" />
+    <ClInclude Include="UI\Eyedropper\Eyedropper.h" />
     <ClInclude Include="UI\ImGuiCustom.h" />
     <ClInclude Include="UI\SetStyleImGui.h" />
     <ClInclude Include="UI\UI.h" />
@@ -154,7 +155,9 @@
     <ClCompile Include="PlayableCharactersManager.cpp" />
     <ClCompile Include="UI\Drawing.cpp" />
     <ClCompile Include="UI\DreamOrphans.cpp" />
+    <ClCompile Include="UI\Eyedropper\Eyedropper.cpp" />
     <ClCompile Include="UI\ImGuiCustom.cpp" />
+    <ClCompile Include="UI\PixelCode.cpp" />
     <ClCompile Include="UI\UI.cpp" />
   </ItemGroup>
   <ItemGroup>

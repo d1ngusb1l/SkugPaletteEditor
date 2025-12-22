@@ -9,7 +9,9 @@
 #include "Files/Config.h"
 #include "AutoLoadPalette.h"
 
-auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::GENERAL_LOG);
+#include "UI/Eyedropper/Eyedropper.h"
+
+auto DrawingLogger = LOGGER::createLocal("Drawing", LogLevel::DEBUG_LOG);
 
 PlayableCharactersManager& charMgr = PlayableCharactersManager::instance();
 int& Curent_Index = PlayableCharactersManager::GetCurrentCharacterIndex();
@@ -28,9 +30,15 @@ void Drawing::Draw()
 
 		ImGui::Begin(lpWindowName, &bDrawAll, WindowFlags);
 		{
-			
+
+			DrawDevWindow();		
+			DrawColorPickerWindow();
 			DrawMenuBar();
-			FileDialog();
+			DrawFileDialog();
+			DrawAboutWindow();
+
+			EyeDropper::getInstance().EyeDropperToolTip();
+
 			if (ImGui::BeginTabBar("##TabBar")) {
 
 				if (ImGui::BeginTabItem("Palette")) {
@@ -39,20 +47,6 @@ void Drawing::Draw()
 				}
 				if (ImGui::BeginTabItem("Auto Load Palette")) {
 					DrawAutoLoadPaletteTabItem();
-					ImGui::EndTabItem();
-				}
-				if (ImGui::BeginTabItem("Test Page")) {
-					ImGui::Text("Did you want find something here?");
-
-					static bool ShowDemoWindow = true;
-					if (ShowDemoWindow) {
-						ImGui::ShowDemoWindow(&ShowDemoWindow);
-					}
-					ImGui::Checkbox("Show Demo Window", &ShowDemoWindow);
-
-
-
-					//Test things
 					ImGui::EndTabItem();
 				}
 				ImGui::EndTabBar();
@@ -133,12 +127,6 @@ void Drawing::DrawMenuBar() {
 		}
 		ImGui::EndMenuBar();
 
-		DrawAboutWindow();
-
-		ImGui::SetNextWindowSize(vFileDialogSize, ImGuiCond_Once);
-
-
-
 	}
 }
 
@@ -156,6 +144,8 @@ void Drawing::DrawAboutWindow() {
 		{
 			bDrawAboutWindow = false;
 		}
+		ImGui::SameLine();
+		ImGui::Checkbox("Super secret Dev Window", &bDrawDevWindow);
 	}
 	ImGui::End();
 }
@@ -216,6 +206,7 @@ void Drawing::DrawPlayableCharactersComboBox() {
 				}
 				// Сохраняем ID выбранного персонажа
 				LOG_LOCAL_DEBUG(DrawingLogger, "Choose new Playable Character ", allCharsNames[i].value(), " at ", i);
+				m_ActiveColorIndex = 1;
 				charMgr.SetCurrentCharacterIndex(i);
 				charMgr.LoadCharacter();
 				LOG_DEBUG("Loading character from slot: ", i);
@@ -251,8 +242,18 @@ void Drawing::DrawCharacterOptions() {
 	if (ImGui::Checkbox("Display super shadow", &Drawing_DisplaySuperShadows)) {
 		MainThread::b_DisplaySuperShadows.store(Drawing_DisplaySuperShadows); //And now, we save this in our atomic bool
 	}
+	if (GroupColorManager::GetInstance().HasData()) {
+		ImGui::Checkbox("Group Character Parts", &bDrawColorGroup);
+	}
+	else {
+		bDrawColorGroup = false;
+	}
+	ImGui::Checkbox("Single Color Picker", &bUseColorPickerMode);
 
-	ImGui::Checkbox("Group Character Parts", &bDrawColorGroup);
+	if (bUseColorPickerMode) {
+		ImGui::SameLine();
+		ImGui::Text("Current Color ID %d", m_ActiveColorIndex);
+	}
 }
 
 void Drawing::DrawCharacterPaletteNumSlider() {
@@ -337,68 +338,43 @@ void Drawing::DrawCharacterColors() {
 	}
 
 	ImGui::Spacing();
+
 	ImGui::Text("Colors Palette: %d", Curent_Char.Num_Of_Color);
-	if (GroupColorManager::GetInstance().HasData() and bDrawColorGroup){
-	
-		GroupColors();
-	}
-	else {
-		UnGroupColors();
-	}
-
-
-	
-}
-
-void Drawing::GroupColors() {
 	auto& colors = Curent_Char.Character_Colors;
-	if (auto groupsPtr = GroupColorManager::GetInstance().GetGroupsForCharacter(Curent_Char.Char_Name)) {
+	bool hasGroups = false;
+	const std::vector<ColorGroup>* groupsPtr = nullptr;
+
+	if (bDrawColorGroup) {
+		groupsPtr = GroupColorManager::GetInstance().GetGroupsForCharacter(Curent_Char.Char_Name);
+		hasGroups = (groupsPtr != nullptr);
+
+		if (!hasGroups) {
+			LOG_LOCAL_ERROR(DrawingLogger, "Can't find JSON for Character");
+		}
+	}
+
+	// Автоматический расчет столбцов для негруппированного режима
+	float availableWidth = ImGui::GetContentRegionAvail().x;
+	float colorButtonSize = ImGui::GetFrameHeight();
+	float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
+	int colorsPerRow = (int)(availableWidth / (colorButtonSize + itemSpacing));
+	if (colorsPerRow < 1) colorsPerRow = 1;
+
+	// Обработка цветов в зависимости от режима
+	if (hasGroups && bDrawColorGroup) {
+		// Группированный режим
 		const auto& groups = *groupsPtr;
 
-		// Отображаем с группировкой
 		for (const auto& group : groups) {
-			// Добавляем ImGuiTreeNodeFlags_DefaultOpen для открытого состояния по умолчанию
 			if (ImGui::CollapsingHeader(group.groupName.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-				// Используем стиль без отступов для более плотного расположения
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
 
-				// Отображаем цвета в группе
 				for (int i = group.startIndex;
 					i < group.startIndex + group.count && i < colors.size();
 					i++) {
+					DrawColorButton(i, colors[i]);
 
-					ImGui::PushID(i);
-					//First of all, we change BGRA to RGBA
-					ImU32 colorRGBA_U32 = ColorsTools::SwapRBChannels(colors[i]);
-					//Then, we change ImU32 to ImVec4, for ColorEdit4 correct work
-					ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(colorRGBA_U32);
-
-					// Кнопка цвета
-					if (ImGuiCustom::ColorEdit4(
-						("##color_" + std::to_string(i)).c_str(),
-						&colorVec.x, //Pass the address of the first element (x) to a function expecting float[4]
-						ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar
-					))
-					{
-						LOG_LOCAL_DEBUG(DrawingLogger, "Change color at index: ");
-						LOG_LOCAL_VARIABLE(DrawingLogger, i);
-						LOG_LOCAL_DEBUG(DrawingLogger, "Change color to: ");
-						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.x);
-						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.y);
-						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.z);
-						LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.w);
-						LOG_LOCAL_DEBUG(DrawingLogger, "Red, Green, Blue, Alpha");
-						//First, we change from float ImVec4 to ImU32 (__int32)
-						ImU32 ColorToWrite = ImGui::ColorConvertFloat4ToU32(colorVec);
-						//Then, we change BGRA to RGBA
-						ColorToWrite = ColorsTools::SwapRBChannels(ColorToWrite);
-						PlayableCharactersManager::ChangePaletteColor(i, ColorToWrite);
-					}
-
-
-					ImGui::PopID();
-
-					// Используем SameLine() с проверкой, помещается ли следующий элемент
+					// Используем SameLine() с проверкой
 					bool isLastInGroup = (i == group.startIndex + group.count - 1);
 					bool isLastValidColor = (i == colors.size() - 1);
 
@@ -411,64 +387,78 @@ void Drawing::GroupColors() {
 		}
 	}
 	else {
-		LOG_LOCAL_ERROR(DrawingLogger, "Can't find JSON for Character");
-		UnGroupColors();
+		// Негруппированный режим
+		int currentColumn = 0;
+
+		for (int i = 1; i < colors.size(); i++) { // Начинаем с второго цвета
+			DrawColorButton(i, colors[i]);
+
+			// Решаем, добавлять SameLine или переходить на новую строку
+			currentColumn++;
+			if (currentColumn < colorsPerRow && i < colors.size() - 1) {
+				ImGui::SameLine(0, itemSpacing);
+			}
+			else {
+				currentColumn = 0;
+			}
+		}
 	}
+	
 }
-void Drawing::UnGroupColors() {
-	auto& colors = Curent_Char.Character_Colors;
-	// Автоматический расчет столбцов
-	float availableWidth = ImGui::GetContentRegionAvail().x;
-	float colorButtonSize = ImGui::GetFrameHeight();
-	float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
 
-	int colorsPerRow = (int)(availableWidth / (colorButtonSize + itemSpacing));
-	if (colorsPerRow < 1) colorsPerRow = 1;
+void Drawing::DrawColorButton(int index, ImU32 colorU32) {
+	ImGui::PushID(index);
 
-	// Счетчик для текущей строки
-	int currentColumn = 0;
+	// Конвертируем цвет
+	ImU32 colorRGBA_U32 = ColorsTools::SwapRBChannels(colorU32);
+	ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(colorRGBA_U32);
 
-	for (int i = 1; i < colors.size(); i++) { //We start from second (1) color, becouse first color doesn't affect anything
-		ImGui::PushID(i);
-		//First of all, we change BGRA to RGBA
-		ImU32 colorRGBA_U32 = ColorsTools::SwapRBChannels(colors[i]);
-		//Then, we change ImU32 to ImVec4, for ColorEdit4 correct work
-		ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(colorRGBA_U32);
+	// Выбираем флаги в зависимости от режима
+	ImGuiColorEditFlags flags = ImGuiColorEditFlags_NoInputs |
+		ImGuiColorEditFlags_NoLabel |
+		ImGuiColorEditFlags_AlphaPreview |
+		ImGuiColorEditFlags_AlphaBar;
 
-		// Кнопка цвета
-		if (ImGuiCustom::ColorEdit4(
-			("##color_" + std::to_string(i)).c_str(),
-			&colorVec.x, //Pass the address of the first element (x) to a function expecting float[4]
-			ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaPreview | ImGuiColorEditFlags_AlphaBar
-		))
-		{
-			LOG_LOCAL_DEBUG(DrawingLogger, "Change color at index: ");
-			LOG_LOCAL_VARIABLE(DrawingLogger, i);
-			LOG_LOCAL_DEBUG(DrawingLogger, "Change color to: ");
-			LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.x);
-			LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.y);
-			LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.z);
-			LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.w);
-			LOG_LOCAL_DEBUG(DrawingLogger, "Red, Green, Blue, Alpha");
-			//First, we change from float ImVec4 to ImU32 (__int32)
-			ImU32 ColorToWrite = ImGui::ColorConvertFloat4ToU32(colorVec);
-			//Then, we change BGRA to RGBA
-			ColorToWrite = ColorsTools::SwapRBChannels(ColorToWrite);
-			PlayableCharactersManager::ChangePaletteColor(i, ColorToWrite);
-		}
+	if (bUseColorPickerMode) {
+		flags |= ImGuiColorEditFlags_NoPicker;
 
-
-		ImGui::PopID();
-
-		// Решаем, добавлять SameLine или переходить на новую строку
-		currentColumn++;
-		if (currentColumn < colorsPerRow && i < colors.size() - 1) {
-			ImGui::SameLine(0, itemSpacing);
-		}
-		else {
-			currentColumn = 0;
-		}
+		// Делаем активную кнопку более заметной
+		//if (m_ActiveColorIndex == index) {
+		//	flags |= ImGuiColorEditFlags_Border;
+		//}
 	}
+
+	// Кнопка цвета
+	if (ImGuiCustom::ColorEdit4(
+		("##color_" + std::to_string(index)).c_str(),
+		&colorVec.x,
+		flags
+	)) {
+		ProcessColorChange(index, colorVec);
+	}
+
+	// В режиме Color Picker обрабатываем клик для выбора активного цвета
+	if (bUseColorPickerMode && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+		m_ActiveColorIndex = index;
+	}
+
+	ImGui::PopID();
+}
+
+void Drawing::ProcessColorChange(int index, const ImVec4& colorVec) {
+	LOG_LOCAL_DEBUG(DrawingLogger, "Change color at index: ");
+	LOG_LOCAL_VARIABLE(DrawingLogger, index);
+	LOG_LOCAL_DEBUG(DrawingLogger, "Change color to: ");
+	LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.x);
+	LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.y);
+	LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.z);
+	LOG_LOCAL_VARIABLE(DrawingLogger, colorVec.w);
+	LOG_LOCAL_DEBUG(DrawingLogger, "Red, Green, Blue, Alpha");
+
+	// Конвертируем обратно
+	ImU32 ColorToWrite = ImGui::ColorConvertFloat4ToU32(colorVec);
+	ColorToWrite = ColorsTools::SwapRBChannels(ColorToWrite);
+	PlayableCharactersManager::ChangePaletteColor(index, ColorToWrite);
 }
 
 void Drawing::DrawAutoLoadPaletteTabItem() {
@@ -617,7 +607,10 @@ void Drawing::DrawAutoLoadPaletteTabItem() {
 }
 
 
-void Drawing::FileDialog() {
+void Drawing::DrawFileDialog() {
+
+	ImGui::SetNextWindowSize(vFileDialogSize, ImGuiCond_Once);
+
 	if (ImGuiFileDialog::Instance()->Display("SavePaletteFile", ImGuiWindowFlags_NoDocking)) {
 
 		if (ImGuiFileDialog::Instance()->IsOk()) { // action if OK
@@ -672,4 +665,100 @@ void Drawing::FileDialog() {
 		// close
 		ImGuiFileDialog::Instance()->Close();
 	}
+}
+
+void Drawing::DrawColorPickerWindow() {
+	if (!bUseColorPickerMode) return;
+	auto& colors = Curent_Char.Character_Colors;
+
+	ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiCond_Once);
+	if (ImGui::Begin("Color Picker", &bUseColorPickerMode, ImGuiWindowFlags_NoCollapse)) {
+
+		// Отображаем информацию о текущем цвете и группе
+		ImGui::Text("Color Index: #%d", m_ActiveColorIndex);
+
+		// Определяем, в какой группе находится активный цвет
+		std::string currentGroup = "Ungrouped";
+		if (auto groupsPtr = GroupColorManager::GetInstance().GetGroupsForCharacter(Curent_Char.Char_Name)) {
+			const auto& groups = *groupsPtr;
+			for (const auto& group : groups) {
+				if (m_ActiveColorIndex >= group.startIndex &&
+					m_ActiveColorIndex < group.startIndex + group.count) {
+					currentGroup = group.groupName;
+					break;
+				}
+			}
+		}
+		ImGui::Text("Group: %s", currentGroup.c_str());
+
+		ImGui::Separator();
+
+		// Получаем текущий цвет
+		ImU32 colorRGBA_U32 = ColorsTools::SwapRBChannels(colors[m_ActiveColorIndex]);
+		ImVec4 colorVec = ImGui::ColorConvertU32ToFloat4(colorRGBA_U32);
+
+		// Используем временный буфер для ref цвета
+		static int lastActiveIndex = -1;
+		static ImVec4 refColorVec;
+
+		// Если индекс изменился или окно только открылось, обновляем ref цвет
+		if (lastActiveIndex != m_ActiveColorIndex) {
+			refColorVec = colorVec;
+			lastActiveIndex = m_ActiveColorIndex;
+		}
+
+		// Color Picker с отображением оригинального цвета
+		bool colorChanged = ImGui::ColorPicker4("##color_picker", &colorVec.x,
+			ImGuiColorEditFlags_NoLabel |
+			ImGuiColorEditFlags_AlphaPreview |
+			ImGuiColorEditFlags_AlphaBar,
+			&refColorVec.x);
+
+		if (colorChanged) {
+			ProcessColorChange(m_ActiveColorIndex, colorVec);
+		}
+
+		// Отображаем информацию о цветах
+		ImGui::Separator();
+		ImGui::Text("Navigation:");
+
+		if (ImGui::ArrowButton("##prev", ImGuiDir_Left) && m_ActiveColorIndex > 1) {
+			m_ActiveColorIndex--;
+		}
+		ImGui::SameLine();
+		ImGui::Text("Index: #%d", m_ActiveColorIndex);
+		ImGui::SameLine();
+		if (ImGui::ArrowButton("##next", ImGuiDir_Right) && m_ActiveColorIndex < colors.size() - 1) {
+			m_ActiveColorIndex++;
+		}	
+	}
+	ImGui::End();
+}
+
+
+
+
+//===== DEV WINDOW =======
+
+void Drawing::DrawDevWindow() {
+	if (!bDrawDevWindow) return;
+	ImGui::Begin("Developer Window", &bDrawDevWindow);
+	ImGui::Text("You want find something here?");
+	static ImVec4 Test_Color;
+	ImGui::ColorButton("Test!", Test_Color);
+	if(ImGui::Button("Eyedropper!")) {
+		EyeDropper::getInstance().StartEyedropper(&Test_Color.x);
+	}
+	if(ImGui::Checkbox("Show console", &bDrawConsole)) {
+		SetConsoleMode(bDrawConsole);
+	}
+	static bool ShowDemoWindow;
+	if (ImGui::Checkbox("Show Demo Window", &ShowDemoWindow)) {
+		SetConsoleMode(bDrawConsole);
+	}
+
+	if (ShowDemoWindow) {
+		ImGui::ShowDemoWindow(&ShowDemoWindow);
+	}
+	ImGui::End();
 }

@@ -20,6 +20,10 @@ public:
     //static void SetStyleColors();
 
 private:
+
+    static void ResizePreReset();
+    static void ResizePostReset(IDirect3DDevice9* device, HRESULT res);
+    static void RenderPostPresent(IDirect3DDevice9* device, HRESULT res);
     static bool s_initialized;
     static bool s_visible;
     static HWND s_hwnd;

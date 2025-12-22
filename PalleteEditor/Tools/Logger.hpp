@@ -48,11 +48,7 @@ private:
 
     // Приватный конструктор для синглтона
     LOGGER() : m_level(
-#ifdef _DEBUG
-        LogLevel::DEBUG_LOG
-#else
         LogLevel::GENERAL_LOG
-#endif
     ), m_useColors(true), m_name("Global") {
         HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
         if (hOut != INVALID_HANDLE_VALUE) {
@@ -332,4 +328,12 @@ static bool CreateConsole() {
         SetWindowLongPtr(hwnd, GWL_STYLE, style);
     }
     return true;
+}
+
+static void SetConsoleMode(int Mode = 0) {
+    HWND hwnd = GetConsoleWindow();
+    ShowWindow(
+        hwnd,
+        Mode
+    );
 }

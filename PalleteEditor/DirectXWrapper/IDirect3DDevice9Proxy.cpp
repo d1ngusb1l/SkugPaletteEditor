@@ -1,5 +1,4 @@
 #include "pch.h"
-#include "UI/UI.h" //For our UI. Used only in IDirect3DDevice9Proxy::EndScene func
 
 IDirect3DDevice9Proxy *IDirect3DDevice9Proxy::lastDevice = NULL;
 
@@ -125,15 +124,7 @@ HRESULT IDirect3DDevice9Proxy::Reset(D3DPRESENT_PARAMETERS* pPresentationParamet
 	if (callbacks[PRERESET])
 		((D3D9DevicePreResetFunc)callbacks[PRERESET])();
 
-	// ОЧЕНЬ ВАЖНО: Сначала инвалидируем ресурсы ImGui
-	if (UI::IsInitialized())
-		ImGui_ImplDX9_InvalidateDeviceObjects();
-
 	HRESULT res = (origIDirect3DDevice9->Reset(pPresentationParameters));
-
-	// Восстанавливаем ресурсы ImGui после успешного сброса
-	if (SUCCEEDED(res) && UI::IsInitialized())
-		ImGui_ImplDX9_CreateDeviceObjects();
 
 	if (callbacks[POSTRESET])
 		((D3D9DevicePostResetFunc)callbacks[POSTRESET])(this, res);
@@ -141,9 +132,6 @@ HRESULT IDirect3DDevice9Proxy::Reset(D3DPRESENT_PARAMETERS* pPresentationParamet
 }
 
 HRESULT IDirect3DDevice9Proxy::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion){
-	
-	if (UI::IsInitialized() && UI::IsVisible())
-		UI::Render();
 
 	HRESULT res = (origIDirect3DDevice9->Present(pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion));
 	if (callbacks[POSTPRESENT])

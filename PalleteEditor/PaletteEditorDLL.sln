@@ -11,8 +11,8 @@ Global
 		Release_DLL|x86 = Release_DLL|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3FADF68E-9201-4351-AB64-0DF66A122597}.Debug_DLL|x86.ActiveCfg = Release|Win32
-		{3FADF68E-9201-4351-AB64-0DF66A122597}.Debug_DLL|x86.Build.0 = Release|Win32
+		{3FADF68E-9201-4351-AB64-0DF66A122597}.Debug_DLL|x86.ActiveCfg = Debug|Win32
+		{3FADF68E-9201-4351-AB64-0DF66A122597}.Debug_DLL|x86.Build.0 = Debug|Win32
 		{3FADF68E-9201-4351-AB64-0DF66A122597}.Release_DLL|x86.ActiveCfg = Release|Win32
 		{3FADF68E-9201-4351-AB64-0DF66A122597}.Release_DLL|x86.Build.0 = Release|Win32
 	EndGlobalSection

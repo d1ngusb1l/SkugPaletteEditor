@@ -45,6 +45,9 @@ static bool lastStateb_NODisplayChar = MainThread::b_NODisplayChar;
 
 int MainThreadProc(HMODULE hModule) {
 	CreateConsole();
+#ifndef _DEBUG
+	SetConsoleMode();
+#endif
 	LOG_LOCAL_DEBUG(MainThreadLogger, "Started Main Thread!");
 	LOG_LOCAL_FUNCTION_ENTRY(MainThreadLogger);
 	LOG_LOCAL_THREAD_INFO(MainThreadLogger);

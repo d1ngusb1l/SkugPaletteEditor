@@ -7,6 +7,7 @@
 #include <ImGui/imgui.h>
 #include <ImGui/imgui_internal.h>
 
+#include "Eyedropper/Eyedropper.h"
 
 using namespace ImGui;
 static void ColorEditRestoreHS(const float* col, float* H, float* S, float* V)
@@ -28,6 +29,7 @@ static void ColorEditRestoreHS(const float* col, float* H, float* S, float* V)
 
 bool ImGuiCustom::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flags)
 {
+
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
         return false;
@@ -200,6 +202,12 @@ bool ImGuiCustom::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlag
                 SetNextItemWidth(square_sz * 12.0f); // Use 256 + bar sizes?
                 value_changed |= ColorPicker4("##picker", col, picker_flags, &g.ColorPickerRef.x);
             }
+
+            Separator();
+
+            if(ImGui::Button("Eyedropper")) {
+                EyeDropper::getInstance().StartEyedropper(col);
+            }
             EndPopup();
         }
     }
@@ -211,6 +219,26 @@ bool ImGuiCustom::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlag
         SameLine(0.0f, style.ItemInnerSpacing.x);
         window->DC.CursorPos.x = pos.x + ((flags & ImGuiColorEditFlags_NoInputs) ? w_button : w_full + style.ItemInnerSpacing.x);
         TextEx(label, label_display_end);
+    }
+
+    if (EyeDropper::getInstance().IsThreadFinished()) {
+        if (EyeDropper::getInstance().WasCancelled()) {
+            // Пипетка была отменена - возвращаем предыдущий цвет
+            col[0] = g.ColorPickerRef.x;
+            col[1] = g.ColorPickerRef.y;
+            col[2] = g.ColorPickerRef.z;
+            if (alpha) col[3] = g.ColorPickerRef.w;
+            value_changed = true;
+        }
+    }
+
+    // Во время работы пипетки показываем предпросмотр
+    if (!EyeDropper::getInstance().IsThreadFinished()) {
+        ImVec4 EyeDropperColor = EyeDropper::getInstance().GetColorUnderCursorImVec4();
+        col[0] = EyeDropperColor.x;
+        col[1] = EyeDropperColor.y;
+        col[2] = EyeDropperColor.z;
+        value_changed = true;
     }
 
     // Convert back
