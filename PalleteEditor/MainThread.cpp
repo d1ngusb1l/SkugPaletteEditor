@@ -5,6 +5,8 @@
 #include "Tools/MemoryWorker.hpp"
 #include "AddressesTable.h"
 #include "PlayableCharactersManager.h"
+#include "Files/Config.h"
+#include "AutoLoadPalette.h"
 
 #pragma region Global Variable
 
@@ -53,6 +55,9 @@ int MainThreadProc(HMODULE hModule) {
 		return false;
 	}
 	LOG_LOCAL_INFO(MainThreadLogger, "We are proxy d3d9!");
+
+	config::init();
+	LOG_LOCAL_DEBUG(MainThreadLogger, "Loaded Config File!");
 
 
 	if (!ProcessManager::instance().ReadProcess()) return -1;
@@ -179,6 +184,8 @@ int MainLoop() {
 		PlayableCharactersManager::ClearCharacterData();
 		PlayableCharactersManager::RefreshCharacterSlots();
 		MainThread::Match_Readed = true;
+
+		AutoPalette::init();
 
 	}
 	// Если мы НЕ в матче И читали персонажей (значит были в матче)

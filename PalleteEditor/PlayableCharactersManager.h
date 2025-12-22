@@ -130,3 +130,24 @@ public:
     static bool ChangeOptionPaletteColor(ImU32& BGRAcolorValue, ColorOptionFlag flag);
     static bool ChangePaletteColor(int Color_ID, ImU32 &BGRAcolorValue);
 };
+
+inline static const char* PlayableCharacterNames[] = {
+    "Filia",
+    "Cerebella",
+    "Peacock",
+    "Parasoul",
+    "MsFortune",
+    "Painwheel",
+    "Valentine",
+    "Double",
+    "Squigly",
+    "BigBand",
+    "Eliza",
+    "Fukua",
+    "Beowulf",
+    "RoboFortune",
+    "Annie",
+    "Umbrella",
+    "BlackDahlia",
+    "Marie"
+};

@@ -10,7 +10,7 @@ private:
 	inline static ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_MenuBar;
 	inline static bool bDrawAll = true;
 	inline static bool bDrawAboutWindow = false;
-	inline static bool bDrawAboutWindow2 = false;
+	inline static bool bDrawColorGroup = true;
 	inline static LPDIRECT3DDEVICE9 pD3DDevice = nullptr;;
 
 public:
@@ -20,6 +20,7 @@ private:
 	//Our draw functions, for understanding and editing
 	static void DrawMenuBar();
 	static void DrawAboutWindow();
+	static void FileDialog();
 
 	static void DrawPaletteTabItem(); //Below Palette Tab Item Stuff ↓
 
@@ -27,6 +28,8 @@ private:
 	static void DrawCharacterPaletteNumSlider();
 	static void DrawCharacterOptions();
 	static void DrawCharacterColors();
+	static void GroupColors();
+	static void UnGroupColors();
 
 	static void DrawAutoLoadPaletteTabItem();
 };
